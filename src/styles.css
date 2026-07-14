@@ -595,6 +595,20 @@ button:hover {
   font-weight: 700;
 }
 
+.scene-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #f2e9ff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 480ms ease;
+}
+
+.scene-fade.opaque {
+  opacity: 1;
+}
+
 .reset {
   position: fixed;
   right: 16px;

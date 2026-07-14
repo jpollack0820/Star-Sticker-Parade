@@ -12,7 +12,7 @@ const errors = [];
 // Fixed-duration holds are unreliable because headless rendering speed varies a lot
 // across machines/CI (frame count per held second is not constant), so we poll actual
 // game state instead of guessing a duration.
-async function moveUntil(page, key, needle, { maxMs = 8000, stepMs = 100 } = {}) {
+async function moveUntil(page, key, needle, { maxMs = 15000, stepMs = 100 } = {}) {
   await page.keyboard.down(key);
   const start = Date.now();
   let met = false;

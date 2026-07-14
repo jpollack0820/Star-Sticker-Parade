@@ -221,6 +221,7 @@ let dialogActions: HTMLElement;
 let phone: HTMLElement;
 let miniGame: HTMLElement;
 let endingOverlay: HTMLElement;
+let sceneFade: HTMLElement;
 let dogGroups: THREE.Group[] = [];
 const gltfLoader = new GLTFLoader();
 const raycaster = new THREE.Raycaster();
@@ -239,6 +240,22 @@ let nearest: Interaction | null = null;
 let activeModal = false;
 let paradeMode = false;
 let lastPlayerPos = new THREE.Vector3();
+let playerIsMoving = false;
+
+interface CameraCue {
+  pos: THREE.Vector3;
+  look: THREE.Vector3;
+}
+
+interface CameraCinematic {
+  start: number;
+  duration: number;
+  from: CameraCue;
+  to: CameraCue;
+  onDone: () => void;
+}
+
+let cinematic: CameraCinematic | null = null;
 
 init();
 animate();
@@ -297,7 +314,7 @@ function init() {
   updateObjective();
   updateGarland();
   if (save.endingUnlocked) {
-    enterParadeScene(false);
+    enterParadeScene();
   }
 
   window.addEventListener('resize', onResize);
@@ -327,6 +344,7 @@ function createDom() {
       </div>
       <div id="miniGame" class="mini hidden"></div>
       <div id="endingOverlay" class="ending hidden"></div>
+      <div id="sceneFade" class="scene-fade"></div>
       <button id="resetSave" class="reset">Reset</button>
     `,
   );
@@ -340,6 +358,7 @@ function createDom() {
   phone = document.querySelector('#phone')!;
   miniGame = document.querySelector('#miniGame')!;
   endingOverlay = document.querySelector('#endingOverlay')!;
+  sceneFade = document.querySelector('#sceneFade')!;
   phone.querySelector('button')!.addEventListener('click', () => hidePhone());
   interactPrompt.addEventListener('click', () => {
     if (nearest && !activeModal) nearest.onInteract();
@@ -1451,10 +1470,37 @@ function startEnding() {
   save.endingUnlocked = true;
   saveGame();
   closeDialog();
-  enterParadeScene(true);
+  activeModal = true;
+  fadeScene(true, () => {
+    enterParadeScene();
+    fadeScene(false, () => playParadeRevealCamera());
+  });
 }
 
-function enterParadeScene(showOverlay: boolean) {
+// Fades the scene-covering DOM overlay to hide the instant classroom/courtyard
+// visibility swap, matching the .scene-fade CSS transition duration.
+function fadeScene(toOpaque: boolean, onDone: () => void) {
+  sceneFade.classList.toggle('opaque', toOpaque);
+  setTimeout(onDone, 500);
+}
+
+function playParadeRevealCamera() {
+  const finalPos = new THREE.Vector3(player.position.x, 6.15, player.position.z + 6.65);
+  const finalLook = new THREE.Vector3(player.position.x, 0.62, player.position.z - 2.55);
+  const cues: CameraCue[] = [
+    { pos: new THREE.Vector3(7.6, 3.6, -1.5), look: new THREE.Vector3(-2, 1.3, -3.9) },
+    { pos: new THREE.Vector3(-7.6, 3.6, -1.2), look: new THREE.Vector3(2, 1.3, -3.9) },
+    { pos: finalPos, look: finalLook },
+  ];
+  camera.position.copy(cues[0].pos);
+  camera.lookAt(cues[0].look);
+  playCameraSequence(cues, 1700, () => {
+    activeModal = false;
+    showEndingOverlay();
+  });
+}
+
+function enterParadeScene() {
   paradeMode = true;
   scene.background = new THREE.Color(0xeff9ef);
   scene.fog = new THREE.Fog(0xeff9ef, 18, 34);
@@ -1471,7 +1517,10 @@ function enterParadeScene(showOverlay: boolean) {
   });
   updateObjective();
   updateGarland();
-  if (!showOverlay) return;
+}
+
+function showEndingOverlay() {
+  activeModal = true;
   endingOverlay.classList.remove('hidden');
   endingOverlay.innerHTML = `
     <div class="ending-card">
@@ -1483,6 +1532,7 @@ function enterParadeScene(showOverlay: boolean) {
   `;
   endingOverlay.querySelector('#endContinue')!.addEventListener('click', () => {
     endingOverlay.classList.add('hidden');
+    activeModal = false;
   });
 }
 
@@ -1669,7 +1719,7 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.033);
   updateModelAnimations(dt);
   updatePlayer(dt);
-  updateCharacterMotion();
+  updateCharacterMotion(dt);
   updateCamera();
   updateInteractions();
   updateSparkles();
@@ -1681,7 +1731,10 @@ function updateModelAnimations(dt: number) {
 }
 
 function updatePlayer(dt: number) {
-  if (activeModal) return;
+  if (activeModal) {
+    playerIsMoving = false;
+    return;
+  }
   const move = new THREE.Vector3();
   if (keys.has('w') || keys.has('arrowup')) move.z -= 1;
   if (keys.has('s') || keys.has('arrowdown')) move.z += 1;
@@ -1693,7 +1746,8 @@ function updatePlayer(dt: number) {
     if (toTarget.length() > 0.14) move.copy(toTarget.normalize());
     else moveTarget = null;
   }
-  if (move.lengthSq() > 0) {
+  playerIsMoving = move.lengthSq() > 0;
+  if (playerIsMoving) {
     move.normalize();
     player.position.addScaledVector(move, dt * 3.3);
     player.position.x = THREE.MathUtils.clamp(player.position.x, -5.7, 5.7);
@@ -1715,10 +1769,50 @@ function onPointerMoveRequest(event: PointerEvent) {
   }
 }
 
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
 function updateCamera() {
+  if (cinematic) {
+    const elapsed = performance.now() - cinematic.start;
+    const t = easeInOutCubic(THREE.MathUtils.clamp(elapsed / cinematic.duration, 0, 1));
+    camera.position.lerpVectors(cinematic.from.pos, cinematic.to.pos, t);
+    const look = cinematic.from.look.clone().lerp(cinematic.to.look, t);
+    camera.lookAt(look);
+    if (elapsed >= cinematic.duration) {
+      const onDone = cinematic.onDone;
+      cinematic = null;
+      onDone();
+    }
+    return;
+  }
   const target = new THREE.Vector3(player.position.x, paradeMode ? 6.15 : 5.8, player.position.z + (paradeMode ? 6.65 : 6.2));
   camera.position.lerp(target, 0.08);
   camera.lookAt(player.position.x, 0.62, player.position.z - (paradeMode ? 2.55 : 1.05));
+}
+
+// Plays a chain of camera keyframes back to back, ending exactly at the normal
+// player-follow pose so control hands off to updateCamera without a visible pop.
+function playCameraSequence(cues: CameraCue[], segmentMs: number, onComplete: () => void) {
+  let index = 0;
+  const next = () => {
+    if (index >= cues.length - 1) {
+      onComplete();
+      return;
+    }
+    cinematic = {
+      start: performance.now(),
+      duration: segmentMs,
+      from: cues[index],
+      to: cues[index + 1],
+      onDone: () => {
+        index += 1;
+        next();
+      },
+    };
+  };
+  next();
 }
 
 function updateInteractions() {
@@ -1759,16 +1853,22 @@ function updateSparkles() {
   }
 }
 
-function updateCharacterMotion() {
-  const t = performance.now() * 0.001;
+function updateCharacterMotion(dt: number) {
   characterMotions.forEach((motion, index) => {
     if (!motion.root.visible) return;
-    const speed = motion.kind === 'dog' ? 2.1 : motion.kind === 'owl' ? 1.45 : 1.25;
-    const amplitude = motion.kind === 'dog' && save.endingUnlocked ? 0.035 : 0.022;
-    const phase = t * speed + motion.phase + index * 0.13;
-    motion.root.position.y = motion.baseY + Math.sin(phase) * amplitude;
-    motion.root.rotation.z = Math.sin(phase * 0.72) * (motion.kind === 'dog' ? 0.035 : 0.018);
-    const breathe = 1 + Math.sin(phase * 0.92) * (motion.kind === 'dog' ? 0.018 : 0.012);
+    // None of the loaded GLBs ship a real walk-cycle clip for the player (the
+    // generated Miss Malia model has no skeleton or animations at all), so a
+    // brisker procedural hop stands in for "walking" instead of a static idle bob.
+    // Phase is accumulated by dt (not derived from elapsed wall-clock time) so
+    // switching speed when playerIsMoving toggles never causes a phase jump/twitch.
+    const walking = motion.kind === 'player' && playerIsMoving;
+    const speed = walking ? 7.4 : motion.kind === 'dog' ? 2.1 : motion.kind === 'owl' ? 1.45 : 1.25;
+    const amplitude = walking ? 0.05 : motion.kind === 'dog' && save.endingUnlocked ? 0.035 : 0.022;
+    motion.phase += dt * speed;
+    const phase = motion.phase + index * 0.13;
+    motion.root.position.y = motion.baseY + (walking ? Math.abs(Math.sin(phase)) : Math.sin(phase)) * amplitude;
+    motion.root.rotation.z = walking ? Math.sin(phase * 0.5) * 0.05 : Math.sin(phase * 0.72) * (motion.kind === 'dog' ? 0.035 : 0.018);
+    const breathe = 1 + Math.sin(phase * (walking ? 0.5 : 0.92)) * (walking ? 0.02 : motion.kind === 'dog' ? 0.018 : 0.012);
     motion.root.scale.setScalar(breathe);
   });
 }
