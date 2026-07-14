@@ -1,0 +1,22 @@
+{
+  "name": "star-sticker-parade",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "generate:models": "node scripts/generate-character-glbs.mjs",
+    "qa:models": "node scripts/qa-model-assets.mjs",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.179.0",
+    "playwright": "^1.61.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.0.6"
+  }
+}
