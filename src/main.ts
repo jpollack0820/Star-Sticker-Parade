@@ -1004,14 +1004,27 @@ function openMiniGame(student: Student) {
   wireMiniGame(student.id);
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 function miniMarkup(id: StudentId) {
   if (id === 'bunny') {
+    // Two extra words that don't belong in the sentence at all, so the puzzle
+    // is genuine parsing (which 4 of these 6 words, in what order) rather than
+    // just permuting a set you already know are all correct.
+    const tiles = shuffle(['try', 'I', 'again', 'can', 'want', 'help']);
     return `
       <div class="sentence-board" aria-label="sentence blanks">
         ${['', '', '', ''].map((_, index) => `<span class="blank-word" data-blank="${index}"></span>`).join('')}
       </div>
       <div class="tile-tray">
-        ${['try', 'I', 'again', 'can'].map((word) => `<button class="word-tile" data-word="${word}">${word}</button>`).join('')}
+        ${tiles.map((word) => `<button class="word-tile" data-word="${word}">${word}</button>`).join('')}
       </div>
     `;
   }
@@ -1023,30 +1036,35 @@ function miniMarkup(id: StudentId) {
           <path data-line="gold" d="M28 115 C95 160 158 40 230 110 S330 165 392 112" />
           <path data-line="teal" d="M34 162 C96 92 150 188 230 142 S320 72 388 170" />
           <path data-line="pink" d="M54 78 C120 134 176 154 240 88 S316 72 370 138" />
+          <path data-line="rose" d="M210 12 C160 55 264 92 200 132 S142 176 210 202" />
           <path data-line="knot" d="M102 44 C126 86 132 128 104 168 M316 44 C292 86 286 128 314 168" />
         </svg>
         <button class="pull-tab tab-lavender" data-strand="lavender">Pull lavender</button>
         <button class="pull-tab tab-gold" data-strand="gold">Pull gold</button>
         <button class="pull-tab tab-teal" data-strand="teal">Pull teal</button>
         <button class="pull-tab tab-pink" data-strand="pink">Pull pink</button>
+        <button class="pull-tab tab-rose" data-strand="rose">Pull rose</button>
         <button class="pull-tab tab-knot" data-strand="knot">Loosen knot</button>
       </div>
-      <div class="rule-strip">Free strands first. Pinned strands shake.</div>
+      <div class="rule-strip">Free strands first. Pinned strands shake. Three wrong pulls and it all slips back.</div>
     `;
   }
   if (id === 'turtle') {
+    // Four colors and six slots (up from three/five) so the pattern is big
+    // enough that memorizing it is a real task, not a glance.
+    const palette = ['green', 'lavender', 'gold', 'sky'];
+    const pattern = Array.from({ length: 6 }, () => palette[Math.floor(Math.random() * palette.length)]);
     return `
-      <div class="pattern-target">
-        ${['green', 'lavender', 'gold', 'green', 'gold'].map((color) => `<span class="pattern-dot ${color}"></span>`).join('')}
+      <div class="pattern-target" id="patternTarget">
+        ${pattern.map((color) => `<span class="pattern-dot ${color}"></span>`).join('')}
       </div>
       <div class="pattern-slots">
-        ${['green', 'lavender', 'gold', 'green', 'gold'].map((color, index) => `<button class="pattern-slot" data-color="${color}" data-slot="${index}" aria-label="pattern slot ${index + 1}"></button>`).join('')}
+        ${pattern.map((color, index) => `<button class="pattern-slot" data-color="${color}" data-slot="${index}" aria-label="pattern slot ${index + 1}"></button>`).join('')}
       </div>
       <div class="sort-row">
-        <button class="sort-charm lavender" data-color="lavender">lavender</button>
-        <button class="sort-charm green" data-color="green">green</button>
-        <button class="sort-charm gold" data-color="gold">gold</button>
+        ${palette.map((color) => `<button class="sort-charm ${color}" data-color="${color}">${color}</button>`).join('')}
       </div>
+      <button class="peek-btn" id="peekBtn" type="button">Peek once more</button>
     `;
   }
   if (id === 'duckling') {
@@ -1054,7 +1072,7 @@ function miniMarkup(id: StudentId) {
       <div class="lantern-catch">
         ${Array.from({ length: 12 }, (_, index) => {
           const good = ![2, 7, 10].includes(index);
-          return `<button class="sparkle-dot dot-${index} ${good ? 'warm' : 'sleepy'}" data-good="${good ? 'yes' : 'no'}" aria-label="${good ? 'warm' : 'sleepy'} sparkle ${index + 1}"></button>`;
+          return `<button class="sparkle-dot dormant dot-${index} ${good ? 'warm' : 'sleepy'}" data-good="${good ? 'yes' : 'no'}" aria-label="${good ? 'warm' : 'sleepy'} sparkle ${index + 1}"></button>`;
         }).join('')}
         <div class="lantern-core"></div>
       </div>
@@ -1065,8 +1083,9 @@ function miniMarkup(id: StudentId) {
       ${'THANKYOU'.split('').map((_, index) => `<span class="letter-slot" data-letter-slot="${index}"></span>`).join('')}
     </div>
     <div class="tile-tray">
-      ${['Y', 'T', 'O', 'A', 'N', 'U', 'K', 'H'].map((letter) => `<button class="letter-sticker" data-letter="${letter}">${letter}</button>`).join('')}
+      ${'THANKYOU'.split('').map((letter) => `<button class="letter-sticker" data-letter="${letter}">${letter}</button>`).join('')}
     </div>
+    <button class="peek-btn" id="peekBtn" type="button">Peek once more</button>
   `;
 }
 
@@ -1082,12 +1101,19 @@ function wireMiniGame(id: StudentId) {
   if (id === 'bunny') {
     const target = ['I', 'can', 'try', 'again'];
     let progress = 0;
-    status.textContent = 'Make the sentence: I can try again.';
+    status.textContent = "Six tiles, but only four belong. Figure out what Pip's trying to say.";
     miniGame.querySelectorAll<HTMLButtonElement>('.word-tile').forEach((button) => {
       button.addEventListener('click', () => {
-        if (button.dataset.word !== target[progress]) {
+        const word = button.dataset.word || '';
+        if (!target.includes(word)) {
           button.classList.add('wiggle');
-          status.textContent = 'That word does not fit the next blank yet.';
+          status.textContent = "That word isn't part of the sentence.";
+          setTimeout(() => button.classList.remove('wiggle'), 260);
+          return;
+        }
+        if (word !== target[progress]) {
+          button.classList.add('wiggle');
+          status.textContent = 'That one belongs, but not yet — try a different word first.';
           setTimeout(() => button.classList.remove('wiggle'), 260);
           return;
         }
@@ -1110,45 +1136,103 @@ function wireMiniGame(id: StudentId) {
       gold: { label: 'Gold', after: ['lavender'] },
       teal: { label: 'Teal', after: ['lavender'] },
       pink: { label: 'Pink', after: ['gold', 'teal'] },
-      knot: { label: 'Knot', after: ['pink'] },
+      rose: { label: 'Rose', after: ['pink'] },
+      knot: { label: 'Knot', after: ['rose'] },
     };
+    const total = Object.keys(rules).length;
     const pulled = new Set<string>();
+    let wrongPulls = 0;
+    const tabs = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.pull-tab'));
     status.textContent = 'Look for the strand that is not trapped under another one.';
-    miniGame.querySelectorAll<HTMLButtonElement>('.pull-tab').forEach((button) => {
+
+    // Three wrong pulls and the whole tangle snaps back — matching Bram's
+    // "I tried three times" temper, this gives the puzzle real stakes without
+    // being a hard fail: you just have to start the strand order over.
+    const resetTangle = () => {
+      pulled.clear();
+      wrongPulls = 0;
+      tabs.forEach((tab) => {
+        tab.disabled = false;
+        tab.classList.remove('picked');
+      });
+      miniGame.querySelectorAll('.yarn-board path').forEach((path) => path.classList.remove('pulled'));
+      status.textContent = 'The whole tangle slips back. Start the strand order again.';
+    };
+
+    tabs.forEach((button) => {
       button.addEventListener('click', () => {
-        const id = button.dataset.strand || '';
-        const missing = rules[id].after.filter((needed) => !pulled.has(needed));
+        const strand = button.dataset.strand || '';
+        const missing = rules[strand].after.filter((needed) => !pulled.has(needed));
         if (missing.length > 0) {
           button.classList.add('wiggle');
-          status.textContent = `${rules[id].label} is still pinned under ${missing.map((item) => rules[item].label.toLowerCase()).join(' and ')}.`;
+          wrongPulls += 1;
+          if (wrongPulls >= 3) {
+            setTimeout(resetTangle, 280);
+          } else {
+            status.textContent = `${rules[strand].label} is still pinned under ${missing.map((item) => rules[item].label.toLowerCase()).join(' and ')}.`;
+          }
           setTimeout(() => button.classList.remove('wiggle'), 260);
           return;
         }
-        pulled.add(id);
+        pulled.add(strand);
         button.disabled = true;
         button.classList.add('picked');
-        miniGame.querySelector(`[data-line="${id}"]`)?.classList.add('pulled');
-        status.textContent = `${pulled.size}/5 strands cleared.`;
-        if (pulled.size === 5) complete('Bram stares at the yarn like that was always the plan.');
+        miniGame.querySelector(`[data-line="${strand}"]`)?.classList.add('pulled');
+        status.textContent = `${pulled.size}/${total} strands cleared.`;
+        if (pulled.size === total) complete('Bram stares at the yarn like that was always the plan.');
       });
     });
     return;
   }
 
   if (id === 'turtle') {
-    let selected = 'green';
+    let selected = '';
     let matched = 0;
-    status.textContent = 'Pick a color, then place it in the matching slot.';
-    miniGame.querySelectorAll<HTMLButtonElement>('.sort-charm').forEach((button) => {
+    let peeksLeft = 1;
+    const target = miniGame.querySelector<HTMLElement>('#patternTarget')!;
+    const slots = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.pattern-slot'));
+    const colorButtons = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.sort-charm'));
+    const peekBtn = miniGame.querySelector<HTMLButtonElement>('#peekBtn')!;
+    const total = slots.length;
+
+    colorButtons.forEach((button) => {
       button.addEventListener('click', () => {
         selected = button.dataset.color || '';
-        miniGame.querySelectorAll('.sort-charm').forEach((item) => item.classList.remove('selected'));
+        colorButtons.forEach((item) => item.classList.remove('selected'));
         button.classList.add('selected');
         status.textContent = `Now place ${selected}.`;
       });
     });
-    miniGame.querySelector<HTMLButtonElement>('.sort-charm[data-color="green"]')?.classList.add('selected');
-    miniGame.querySelectorAll<HTMLButtonElement>('.pattern-slot').forEach((button) => {
+    colorButtons[0]?.classList.add('selected');
+    selected = colorButtons[0]?.dataset.color || '';
+
+    slots.forEach((button) => button.disabled = true);
+    peekBtn.disabled = true;
+    status.textContent = 'Study the banner pattern...';
+
+    setTimeout(() => {
+      target.classList.add('hidden-pattern');
+      slots.forEach((button) => button.disabled = false);
+      peekBtn.disabled = false;
+      status.textContent = 'Pick a color, then place it from memory.';
+    }, 2600);
+
+    peekBtn.addEventListener('click', () => {
+      if (peeksLeft <= 0 || peekBtn.disabled) return;
+      peeksLeft -= 1;
+      peekBtn.disabled = true;
+      peekBtn.textContent = 'No peeks left';
+      target.classList.remove('hidden-pattern');
+      slots.forEach((button) => { if (!button.disabled) button.disabled = true; });
+      status.textContent = 'Take another look...';
+      setTimeout(() => {
+        target.classList.add('hidden-pattern');
+        slots.forEach((button) => { if (!button.classList.contains('picked')) button.disabled = false; });
+        status.textContent = 'Back to memory — place the next one.';
+      }, 1500);
+    });
+
+    slots.forEach((button) => {
       button.addEventListener('click', () => {
         if (button.dataset.color !== selected) {
           button.classList.add('wiggle');
@@ -1159,54 +1243,151 @@ function wireMiniGame(id: StudentId) {
         button.classList.add('picked', selected);
         button.disabled = true;
         matched += 1;
-        status.textContent = `${matched}/5 banner spots filled.`;
-        if (matched === 5) complete('Tilly checks it once and finally nods.');
+        status.textContent = `${matched}/${total} banner spots filled.`;
+        if (matched === total) {
+          peekBtn.disabled = true;
+          complete('Tilly checks it once and finally nods.');
+        }
       });
     });
     return;
   }
 
   if (id === 'fox') {
+    // Roo "mostly" knows where the letters go — so this is a memory game, not
+    // a read-and-click one: watch the correct order once, then the tiles
+    // shuffle positions and go blank, and you tap them back in order from
+    // memory. A single limited peek keeps it fair rather than punishing.
     const target = 'THANKYOU'.split('');
     let progress = 0;
-    status.textContent = 'Spell THANK YOU from the sticker pile.';
-    miniGame.querySelectorAll<HTMLButtonElement>('.letter-sticker').forEach((button) => {
+    let peeksLeft = 1;
+    const tiles = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.letter-sticker'));
+    const peekBtn = miniGame.querySelector<HTMLButtonElement>('#peekBtn')!;
+
+    const mask = () => tiles.forEach((tile) => tile.classList.add('masked'));
+    const reveal = () => tiles.forEach((tile) => tile.classList.remove('masked'));
+    const shuffleTilePositions = () => {
+      tiles.forEach((tile) => {
+        tile.style.order = String(Math.floor(Math.random() * 100));
+      });
+    };
+    const lockTiles = () => tiles.forEach((tile) => {
+      if (!tile.classList.contains('picked')) tile.disabled = true;
+    });
+    const unlockTiles = () => tiles.forEach((tile) => {
+      if (!tile.classList.contains('picked')) tile.disabled = false;
+    });
+
+    status.textContent = 'Watch where each letter sticker goes...';
+    lockTiles();
+    peekBtn.disabled = true;
+
+    setTimeout(() => {
+      shuffleTilePositions();
+      mask();
+      unlockTiles();
+      peekBtn.disabled = false;
+      status.textContent = 'Now tap them in order, from memory.';
+    }, 2400);
+
+    peekBtn.addEventListener('click', () => {
+      if (peeksLeft <= 0 || peekBtn.disabled) return;
+      peeksLeft -= 1;
+      peekBtn.disabled = true;
+      peekBtn.textContent = 'No peeks left';
+      reveal();
+      lockTiles();
+      status.textContent = 'Take another look...';
+      setTimeout(() => {
+        mask();
+        unlockTiles();
+        status.textContent = 'Back to memory — tap the next one.';
+      }, 1400);
+    });
+
+    tiles.forEach((button) => {
       button.addEventListener('click', () => {
         if (button.dataset.letter !== target[progress]) {
+          button.classList.remove('masked');
           button.classList.add('wiggle');
-          status.textContent = 'That sticker comes later.';
-          setTimeout(() => button.classList.remove('wiggle'), 260);
+          status.textContent = 'Not that one — try to remember.';
+          setTimeout(() => {
+            button.classList.add('masked');
+            button.classList.remove('wiggle');
+          }, 500);
           return;
         }
         const slot = miniGame.querySelector<HTMLElement>(`.letter-slot[data-letter-slot="${progress}"]`)!;
         slot.textContent = button.textContent || '';
         slot.classList.add('filled');
         button.classList.add('picked');
+        button.classList.remove('masked');
         button.disabled = true;
         progress += 1;
         status.textContent = `${progress}/8 letters placed.`;
-        if (progress === target.length) complete('Roo pretends not to be relieved.');
+        if (progress === target.length) {
+          peekBtn.disabled = true;
+          complete('Roo pretends not to be relieved.');
+        }
       });
     });
     return;
   }
 
+  // Sparkles drift between dormant (dim, unclickable) and active (bright,
+  // clickable) in randomized waves instead of sitting still and always
+  // catchable — matching "the lights keep floating away" and giving the
+  // catch real timing/attention pressure instead of an untimed click-sort.
   let caught = 0;
   const total = 9;
-  status.textContent = 'Catch 9 warm sparkles. Blue ones reset your rhythm.';
-  miniGame.querySelectorAll<HTMLButtonElement>('.sparkle-dot').forEach((button) => {
+  const dots = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.sparkle-dot'));
+  const activeTimers = new Map<HTMLButtonElement, ReturnType<typeof setTimeout>>();
+  status.textContent = 'Catch 9 warm sparkles as they drift bright. Leave the sleepy blue ones be.';
+
+  const activateWave = () => {
+    const dormant = dots.filter((dot) => dot.classList.contains('dormant'));
+    shuffle(dormant)
+      .slice(0, Math.min(2, dormant.length))
+      .forEach((dot) => {
+        dot.classList.remove('dormant');
+        dot.classList.add('active');
+        activeTimers.set(
+          dot,
+          setTimeout(() => {
+            dot.classList.remove('active');
+            dot.classList.add('dormant');
+            activeTimers.delete(dot);
+          }, 1600),
+        );
+      });
+  };
+
+  const waveInterval = setInterval(activateWave, 1100);
+  activateWave();
+
+  dots.forEach((button) => {
     button.addEventListener('click', () => {
       if (button.dataset.good !== 'yes') {
         button.classList.add('wiggle');
-        status.textContent = 'That one is sleepy. Leave it floating.';
+        status.textContent = 'That one is sleepy — let it drift.';
         setTimeout(() => button.classList.remove('wiggle'), 260);
         return;
       }
+      const timer = activeTimers.get(button);
+      if (timer) {
+        clearTimeout(timer);
+        activeTimers.delete(button);
+      }
+      button.classList.remove('dormant', 'active');
       button.classList.add('picked');
       button.disabled = true;
       caught += 1;
       status.textContent = `${caught}/${total} warm sparkles in the lantern.`;
-      if (caught === total) complete('The lantern is glowing softly.');
+      if (caught === total) {
+        clearInterval(waveInterval);
+        activeTimers.forEach((t) => clearTimeout(t));
+        complete('The lantern is glowing softly.');
+      }
     });
   });
 }

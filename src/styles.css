@@ -293,6 +293,10 @@ button:hover {
   stroke: #f58fc1;
 }
 
+.yarn-board path[data-line="rose"] {
+  stroke: #c2447a;
+}
+
 .yarn-board path[data-line="knot"] {
   stroke: #7c579d;
   stroke-width: 9;
@@ -330,6 +334,12 @@ button:hover {
 .tab-pink {
   right: 30px;
   bottom: 46px;
+}
+
+.tab-rose {
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
 }
 
 .tab-knot {
@@ -386,6 +396,17 @@ button:hover {
 .pattern-dot.gold,
 .sort-charm.gold {
   background: #ffe18a !important;
+}
+
+.pattern-slot.picked.sky,
+.pattern-dot.sky,
+.sort-charm.sky {
+  background: #a9d8f5 !important;
+}
+
+.pattern-target.hidden-pattern .pattern-dot {
+  background: #ece3f7 !important;
+  box-shadow: inset 0 0 0 2px rgba(95, 73, 122, 0.12);
 }
 
 .lantern-catch {
@@ -463,6 +484,34 @@ button:hover {
   min-width: 48px !important;
   color: #5e4380 !important;
   background: #fff8df !important;
+  position: relative;
+}
+
+.letter-sticker.masked {
+  color: transparent !important;
+}
+
+.letter-sticker.masked::after {
+  content: '✦';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #cbb3e8;
+  font-size: 16px;
+}
+
+.peek-btn {
+  margin-top: 10px;
+  font-size: 13px !important;
+  padding: 7px 12px !important;
+  background: #f0e4ff !important;
+  color: #6d4c93 !important;
+}
+
+.peek-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .yarn-knot {
@@ -493,7 +542,7 @@ button:hover {
   border-radius: 50%;
   background: #fff0a8 !important;
   box-shadow: 0 0 18px #ffdc6a, inset 0 0 0 2px #fff8d0 !important;
-  animation: floaty 1.6s ease-in-out infinite;
+  transition: opacity 200ms ease;
 }
 
 .sparkle-dot.sleepy {
@@ -517,6 +566,28 @@ button:hover {
 .sparkle-dot.picked {
   transform: scale(0.25) !important;
   opacity: 0;
+}
+
+@keyframes floaty-dormant {
+  0%, 100% { transform: translateY(0) scale(0.55); }
+  50% { transform: translateY(-4px) scale(0.55); }
+}
+
+@keyframes floaty-active {
+  0%, 100% { transform: translateY(0) scale(1.15); }
+  50% { transform: translateY(-7px) scale(1.15); }
+}
+
+.sparkle-dot.dormant {
+  animation: floaty-dormant 1.6s ease-in-out infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+.sparkle-dot.active {
+  animation: floaty-active 0.9s ease-in-out infinite;
+  opacity: 1;
 }
 
 .wiggle {
@@ -569,15 +640,6 @@ button:hover {
   }
   70% {
     transform: translateX(5px);
-  }
-}
-
-@keyframes floaty {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-7px);
   }
 }
 
