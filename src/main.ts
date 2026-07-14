@@ -1,6 +1,7 @@
 import './styles.css';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { makeMissMalia, makeJoshy, makeStudent as makeStudentBody, makeDog as makeDogBody } from './shared/critterKit.mjs';
 
 type StudentId = 'bunny' | 'bear' | 'turtle' | 'duckling' | 'fox';
 type CharmChoice = 'star' | 'heart' | 'moon' | 'butterfly';
@@ -46,6 +47,7 @@ interface DogConfig {
   chest: number;
   accent: number;
   pattern: 'merle' | 'brown' | 'sable' | 'tricolor';
+  spots?: [number, number, number, number, number, number][];
   line: string;
 }
 
@@ -170,6 +172,11 @@ const dogs: DogConfig[] = [
     chest: 0xf8f4ee,
     accent: 0xb57a42,
     pattern: 'merle',
+    spots: [
+      [-0.16, 0.84, -0.12, 0x3a3944, 1.1, 0.9],
+      [0.19, 0.36, -0.2, 0x6c6875, 1.2, 0.9],
+      [-0.2, 0.2, -0.16, 0xb57a42, 1, 0.8],
+    ],
     line: 'Muffin sits very tall, like she knows the parade is important.',
   },
   {
@@ -680,42 +687,7 @@ function buildParadeCourtyard() {
 }
 
 function createDoe() {
-  const group = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xc79c75, roughness: 0.8 });
-  const dressMat = new THREE.MeshStandardMaterial({ color: 0xbca7ff, roughness: 0.75 });
-  const hoofMat = new THREE.MeshStandardMaterial({ color: 0x6d4b3c, roughness: 0.8 });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 0.74, 10, 20), dressMat);
-  body.position.y = 0.74;
-  group.add(body);
-  // A small rounded collar plus a heart charm at the neckline, rather than a
-  // single oversized circle that used to read like a bullseye on the chest.
-  const collar = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 10), new THREE.MeshStandardMaterial({ color: 0xf9ecff, roughness: 0.85 }));
-  collar.scale.set(1.5, 0.55, 0.3);
-  collar.position.set(0, 1.02, -0.34);
-  group.add(collar);
-  const heartCharm = new THREE.Mesh(
-    new THREE.ShapeGeometry(makeHeartShape(0.075), 16),
-    new THREE.MeshStandardMaterial({ color: 0xf7a6ce, roughness: 0.7, side: THREE.DoubleSide }),
-  );
-  heartCharm.position.set(0, 0.92, -0.375);
-  heartCharm.rotation.y = Math.PI;
-  group.add(heartCharm);
-  [-0.15, 0.15].forEach((x) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.36, 8), bodyMat);
-    leg.position.set(x, 0.2, 0);
-    const hoof = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), hoofMat);
-    hoof.scale.set(1.2, 0.45, 0.85);
-    hoof.position.set(x, 0.03, -0.04);
-    group.add(leg, hoof);
-  });
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.39, 24, 18), bodyMat);
-  head.position.y = 1.38;
-  group.add(head);
-  addForwardFace(group, 1.38, -0.36, 1.24, { muzzle: 0xf4d6bd, nose: 0x4d3028 });
-  addEar(group, -0.22, 1.67, bodyMat);
-  addEar(group, 0.22, 1.67, bodyMat);
-  addAntler(group, -0.16, 1.73);
-  addAntler(group, 0.16, 1.73);
+  const group = makeMissMalia();
   addGroundShadow(group, 0.88, 0.52);
   addTextSprite('Miss Malia', new THREE.Vector3(0, 2.05, 0), 0.18, '#5f497a', group);
   attachOptionalModel(group, 'missMalia', { scale: 0.92 });
@@ -724,52 +696,7 @@ function createDoe() {
 }
 
 function createStudent(student: Student) {
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: student.color, roughness: 0.85 });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.42, 8, 14), mat);
-  body.position.y = 0.48;
-  group.add(body);
-  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), new THREE.MeshStandardMaterial({ color: student.id === 'fox' ? 0xfff0d3 : 0xfff7ef, roughness: 0.9 }));
-  chest.scale.set(0.95, 1.16, 0.22);
-  chest.position.set(0, 0.49, -0.25);
-  group.add(chest);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.31, 20, 14), mat);
-  head.position.y = 0.98;
-  group.add(head);
-  addForwardFace(group, 0.99, -0.29, 0.95, { muzzle: student.id === 'fox' ? 0xffe0b0 : 0xfff2df, nose: 0x4a2e31 });
-  if (student.id === 'bunny') {
-    addTallEar(group, -0.12, 1.28, mat);
-    addTallEar(group, 0.12, 1.28, mat);
-    addInnerTallEar(group, -0.12, 1.28);
-    addInnerTallEar(group, 0.12, 1.28);
-  } else if (student.id === 'turtle') {
-    // Wide, tall, contrasting-color dome so the shell silhouette peeks out on
-    // both sides at shoulder height instead of hiding fully behind the body.
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 8), new THREE.MeshStandardMaterial({ color: 0x3f7a4a }));
-    shell.scale.set(1.25, 0.7, 1.05);
-    shell.position.set(0, 0.56, 0.17);
-    group.add(shell);
-    addShellPattern(group);
-  } else if (student.id === 'fox') {
-    addEar(group, -0.17, 1.18, mat);
-    addEar(group, 0.17, 1.18, mat);
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.78, 12), mat);
-    tail.position.set(0, 0.45, 0.37);
-    tail.rotation.x = Math.PI / 2.7;
-    group.add(tail);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), new THREE.MeshStandardMaterial({ color: 0xfff4df, roughness: 0.84 }));
-    tip.scale.set(0.82, 0.82, 1.3);
-    tip.position.set(0, 0.23, 0.68);
-    group.add(tip);
-  } else if (student.id === 'duckling') {
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), new THREE.MeshStandardMaterial({ color: 0xff9f43 }));
-    beak.position.set(0, 0.95, -0.25);
-    beak.rotation.x = Math.PI / 2;
-    group.add(beak);
-  } else {
-    addRoundEar(group, -0.22, 1.12, mat);
-    addRoundEar(group, 0.22, 1.12, mat);
-  }
+  const group = makeStudentBody(student.id, student.color);
   addGroundShadow(group, 0.62, 0.42);
   addTextSprite(student.name, new THREE.Vector3(0, 1.55, 0), 0.16, '#5f497a', group);
   attachOptionalModel(group, student.id, getStudentModelOptions(student.id));
@@ -792,23 +719,7 @@ function getStudentModelOptions(id: StudentId): ModelAttachOptions {
 }
 
 function createOwl() {
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0x8f6b52, roughness: 0.78 });
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.39, 22, 16), mat);
-  body.scale.set(1, 1.18, 0.82);
-  body.position.y = 0.72;
-  group.add(body);
-  const face = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 12), new THREE.MeshStandardMaterial({ color: 0xf4e2bd }));
-  face.scale.set(1.65, 1.0, 0.24);
-  face.position.set(0, 0.84, -0.27);
-  group.add(face);
-  addForwardEyes(group, 0.9, -0.36, 0.1, 0.038);
-  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 8), new THREE.MeshStandardMaterial({ color: 0xf1b451 }));
-  beak.position.set(0, 0.8, -0.39);
-  beak.rotation.x = Math.PI / 2;
-  group.add(beak);
-  addEar(group, -0.17, 1.13, mat);
-  addEar(group, 0.17, 1.13, mat);
+  const group = makeJoshy();
   addGroundShadow(group, 0.58, 0.42);
   addTextSprite('Joshy ❤️', new THREE.Vector3(0, 1.56, 0), 0.2, '#5f497a', group);
   attachOptionalModel(group, 'joshy', { scale: 0.8 });
@@ -817,176 +728,19 @@ function createOwl() {
 }
 
 function createDog(config: DogConfig) {
-  // An upright sitting puppy, front-facing like every other character (the
-  // previous version was a side-profile-only quadruped with no visible face
-  // from the game's fixed front/isometric camera).
-  const group = new THREE.Group();
   const fluffy = config.pattern !== 'brown';
-  const mat = new THREE.MeshStandardMaterial({ color: config.body, roughness: 0.86 });
-  const chestMat = new THREE.MeshStandardMaterial({ color: config.chest, roughness: 0.9 });
-  const bodyR = fluffy ? 0.27 : 0.24;
-  const headY = fluffy ? 0.72 : 0.68;
-  const headR = fluffy ? 0.25 : 0.22;
-
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, fluffy ? 0.32 : 0.28, 8, 14), mat);
-  body.position.y = 0.3;
-  body.scale.set(1.04, 1, 1);
-  group.add(body);
-  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), chestMat);
-  chest.scale.set(0.9, 1.1, 0.22);
-  chest.position.set(0, 0.3, -bodyR * 0.82);
-  group.add(chest);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 20, 14), mat);
-  head.position.set(0, headY, 0);
-  head.scale.set(1, 0.96, 0.94);
-  group.add(head);
-  addForwardFace(group, headY, -headR * 0.82, fluffy ? 0.82 : 0.74, { muzzle: config.chest, nose: 0x2a1713 });
-
-  const earMat = new THREE.MeshStandardMaterial({ color: config.accent, roughness: 0.86 });
-  const leftEar = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.22, 4, 8), earMat);
-  leftEar.scale.set(0.9, 1, 0.55);
-  leftEar.position.set(-headR * 0.9, headY + 0.06, 0);
-  leftEar.rotation.z = 0.55;
-  group.add(leftEar);
-  const rightEar = leftEar.clone();
-  rightEar.position.x = headR * 0.9;
-  rightEar.rotation.z = -0.55;
-  group.add(rightEar);
-
-  if (fluffy) {
-    const ruff = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 10), chestMat);
-    ruff.scale.set(1.05, 0.72, 0.8);
-    ruff.position.set(0, headY - 0.22, -0.02);
-    group.add(ruff);
-  }
-
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.08, fluffy ? 0.3 : 0.2, 8), mat);
-  tail.position.set(0, 0.3, bodyR * 0.85);
-  tail.rotation.x = Math.PI / 2.3;
-  group.add(tail);
-
-  const pawMat = new THREE.MeshStandardMaterial({ color: config.body, roughness: 0.86 });
-  [-1, 1].forEach((side) => {
-    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), pawMat);
-    paw.scale.set(1, 0.55, 1.05);
-    paw.position.set(side * bodyR * 0.5, 0.05, -bodyR * 0.55);
-    group.add(paw);
+  const group = makeDogBody({
+    body: config.body,
+    chest: config.chest,
+    ear: config.accent,
+    fluffy,
+    spots: config.spots,
   });
-
-  if (config.pattern === 'merle') {
-    const spotColors = [0x3a3944, 0x6c6875, 0xb57a42];
-    const spotPositions: [number, number, number][] = [
-      [-0.16, 0.84, -0.12],
-      [0.19, 0.36, -0.2],
-      [-0.2, 0.2, -0.16],
-    ];
-    spotPositions.forEach(([x, y, z], index) => {
-      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), new THREE.MeshStandardMaterial({ color: spotColors[index] }));
-      spot.scale.set(1.1, 0.9, 0.55);
-      spot.position.set(x, y, z);
-      group.add(spot);
-    });
-  }
-
   addGroundShadow(group, fluffy ? 0.62 : 0.56, 0.4);
   addTextSprite(config.name, new THREE.Vector3(0, 1.12, 0), 0.13, '#5f497a', group);
   attachOptionalModel(group, config.id as ModelAssetKey, { scale: 1 });
   registerCharacterMotion(group, 'dog');
   return group;
-}
-
-function addEar(group: THREE.Group, x: number, y: number, mat: THREE.Material) {
-  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.32, 8), mat);
-  ear.position.set(x, y, 0);
-  ear.rotation.z = x < 0 ? 0.35 : -0.35;
-  group.add(ear);
-}
-
-function addTallEar(group: THREE.Group, x: number, y: number, mat: THREE.Material) {
-  const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.35, 4, 8), mat);
-  ear.position.set(x, y, 0);
-  ear.rotation.z = x < 0 ? 0.2 : -0.2;
-  group.add(ear);
-}
-
-function addInnerTallEar(group: THREE.Group, x: number, y: number) {
-  const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.25, 4, 8), new THREE.MeshStandardMaterial({ color: 0xf7a6ce, roughness: 0.86 }));
-  inner.position.set(x, y, -0.035);
-  inner.rotation.z = x < 0 ? 0.2 : -0.2;
-  group.add(inner);
-}
-
-function addRoundEar(group: THREE.Group, x: number, y: number, mat: THREE.Material) {
-  const ear = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), mat);
-  ear.position.set(x, y, 0);
-  group.add(ear);
-}
-
-function addShellPattern(group: THREE.Group) {
-  const patternMat = new THREE.MeshStandardMaterial({ color: 0x6fae74, roughness: 0.78 });
-  [-0.16, 0.16].forEach((x) => {
-    const patch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.16), patternMat);
-    patch.position.set(x, 0.68, 0.2);
-    patch.rotation.x = 0.45;
-    group.add(patch);
-  });
-  const center = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.18), patternMat);
-  center.position.set(0, 0.78, 0.15);
-  center.rotation.x = 0.45;
-  group.add(center);
-}
-
-function addAntler(group: THREE.Group, x: number, y: number) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0xf3dcb0 });
-  const side = Math.sign(x) || 1;
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.036, 0.36), mat);
-  stem.position.set(x, y, 0);
-  stem.rotation.z = side * 0.22;
-  group.add(stem);
-  const upperTine = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.2), mat);
-  upperTine.position.set(x + side * 0.13, y + 0.19, -0.02);
-  upperTine.rotation.z = side * -0.85;
-  group.add(upperTine);
-  const lowerTine = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.023, 0.17), mat);
-  lowerTine.position.set(x - side * 0.03, y + 0.14, 0.02);
-  lowerTine.rotation.z = side * 0.8;
-  group.add(lowerTine);
-  const tipA = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), mat);
-  tipA.position.set(x + side * 0.2, y + 0.28, -0.05);
-  group.add(tipA);
-  const tipB = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), mat);
-  tipB.position.set(x - side * 0.01, y + 0.22, 0.06);
-  group.add(tipB);
-}
-
-function addForwardFace(group: THREE.Group, y: number, z: number, scale: number, colors: { muzzle: number; nose: number }) {
-  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.105 * scale, 14, 10), new THREE.MeshStandardMaterial({ color: colors.muzzle, roughness: 0.86 }));
-  muzzle.scale.set(1.25, 0.8, 0.35);
-  muzzle.position.set(0, y - 0.04 * scale, z);
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.03 * scale, 10, 8), new THREE.MeshStandardMaterial({ color: colors.nose, roughness: 0.7 }));
-  nose.scale.set(1.2, 0.8, 0.55);
-  nose.position.set(0, y - 0.02 * scale, z - 0.075 * scale);
-  group.add(muzzle, nose);
-  addForwardEyes(group, y + 0.07 * scale, z - 0.04 * scale, 0.085 * scale, 0.03 * scale);
-  const blushMat = new THREE.MeshStandardMaterial({ color: 0xf2a6b7, roughness: 0.9 });
-  [-1, 1].forEach((side) => {
-    const blush = new THREE.Mesh(new THREE.SphereGeometry(0.025 * scale, 10, 8), blushMat);
-    blush.scale.set(1.4, 0.8, 0.3);
-    blush.position.set(side * 0.15 * scale, y - 0.05 * scale, z - 0.055 * scale);
-    group.add(blush);
-  });
-}
-
-function addForwardEyes(group: THREE.Group, y: number, z: number, x: number, r: number) {
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x241824, roughness: 0.45 });
-  const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  [-1, 1].forEach((side) => {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), eyeMat);
-    eye.position.set(side * x, y, z);
-    const shine = new THREE.Mesh(new THREE.SphereGeometry(r * 0.28, 8, 6), shineMat);
-    shine.position.set(side * x - side * r * 0.22, y + r * 0.22, z - r * 0.78);
-    group.add(eye, shine);
-  });
 }
 
 function addGroundShadow(group: THREE.Group, width: number, depth: number) {
