@@ -86,11 +86,38 @@ function addBunnyEars(group, color) {
 }
 
 function addAntlers(group) {
+  const antlerColor = 0xf3dcb0;
   for (const side of [-1, 1]) {
-    cylinder(group, 0xf7e0ba, [side * 0.15, 1.72, 0], 0.018, 0.022, 0.28);
-    cylinder(group, 0xf7e0ba, [side * 0.2, 1.81, 0], 0.014, 0.016, 0.15, [0, 0, side * -0.78]);
-    cylinder(group, 0xf7e0ba, [side * 0.1, 1.79, 0], 0.012, 0.014, 0.12, [0, 0, side * 0.7]);
+    // Main beam, angled up and outward from the crown.
+    cylinder(group, antlerColor, [side * 0.15, 1.8, 0], 0.024, 0.03, 0.36, [0.1, 0, side * 0.22]);
+    // Two branching tines near the top.
+    cylinder(group, antlerColor, [side * 0.27, 1.98, -0.03], 0.015, 0.02, 0.2, [0, 0, side * -0.85]);
+    cylinder(group, antlerColor, [side * 0.1, 1.94, 0.03], 0.014, 0.019, 0.17, [0, 0, side * 0.8]);
+    // Rounded tips so the silhouette reads soft/cute rather than spiky.
+    sphere(group, antlerColor, [side * 0.34, 2.06, -0.05], 0.024);
+    sphere(group, antlerColor, [side * 0.14, 2.01, 0.06], 0.022);
   }
+}
+
+function addDressAccent(group) {
+  // A small rounded collar at the neckline plus a heart charm, replacing the
+  // oversized plain circle that used to read like a bullseye on the chest.
+  sphere(group, 0xf7f1ff, [0, 1.02, -0.36], 0.16, [1.5, 0.55, 0.3]);
+  const heart = new THREE.Shape();
+  const s = 0.075;
+  heart.moveTo(0, -0.7 * s);
+  heart.bezierCurveTo(-1.3 * s, -0.05 * s, -1.15 * s, 1.0 * s, -0.45 * s, 1.05 * s);
+  heart.bezierCurveTo(-0.1 * s, 1.1 * s, 0, 0.7 * s, 0, 0.5 * s);
+  heart.bezierCurveTo(0, 0.7 * s, 0.1 * s, 1.1 * s, 0.45 * s, 1.05 * s);
+  heart.bezierCurveTo(1.15 * s, 1.0 * s, 1.3 * s, -0.05 * s, 0, -0.7 * s);
+  const heartMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(heart, 16),
+    new THREE.MeshStandardMaterial({ color: 0xf6a6c8, roughness: 0.7, side: THREE.DoubleSide }),
+  );
+  heartMesh.position.set(0, 0.92, -0.395);
+  heartMesh.rotation.y = Math.PI;
+  heartMesh.castShadow = true;
+  group.add(heartMesh);
 }
 
 function addFootPair(group, color, y = 0.04) {
@@ -101,7 +128,7 @@ function addFootPair(group, color, y = 0.04) {
 function makeMissMalia() {
   const group = new THREE.Group();
   capsule(group, 0xbca7ff, [0, 0.72, 0], 0.37, 0.78, [1, 1.05, 0.95]);
-  sphere(group, 0xf7f1ff, [0, 0.78, -0.34], 0.22, [1.08, 1.35, 0.18]);
+  addDressAccent(group);
   sphere(group, 0xc99f78, [0, 1.38, 0], 0.4, [1, 1.04, 0.96]);
   addFace(group, 1.38, -0.36, 1.28, { muzzle: 0xf2d5bd, nose: 0x4d3028 });
   addEars(group, 0xc99f78, 1.67, 0.24);
@@ -139,10 +166,15 @@ function makeStudent(kind, color) {
   if (kind === 'bunny') addBunnyEars(group, color);
   if (kind === 'bear') addEars(group, color, 1.18, 0.23, 'round');
   if (kind === 'turtle') {
-    sphere(group, 0x5f9367, [0, 0.56, 0.16], 0.35, [1.08, 0.55, 0.85]);
-    sphere(group, 0x8fcb92, [0, 0.72, 0.04], 0.08, [1.1, 0.32, 1.05]);
-    sphere(group, 0x8fcb92, [-0.13, 0.69, 0.02], 0.06, [1, 0.28, 0.9]);
-    sphere(group, 0x8fcb92, [0.13, 0.69, 0.02], 0.06, [1, 0.28, 0.9]);
+    // A wide, tall, contrasting-color dome behind the shoulders so the shell
+    // silhouette peeks out on both sides and above the head from the front,
+    // instead of hiding fully behind the body like the old narrow shell did.
+    sphere(group, 0x3f7a4a, [0, 0.6, 0.18], 0.38, [1.25, 0.7, 1.05]);
+    sphere(group, 0x6fae74, [0, 0.78, 0.15], 0.09, [1, 0.5, 0.9]);
+    sphere(group, 0x6fae74, [-0.16, 0.7, 0.2], 0.075, [1, 0.5, 0.85]);
+    sphere(group, 0x6fae74, [0.16, 0.7, 0.2], 0.075, [1, 0.5, 0.85]);
+    sphere(group, 0x6fae74, [-0.26, 0.55, 0.22], 0.06, [1, 0.5, 0.8]);
+    sphere(group, 0x6fae74, [0.26, 0.55, 0.22], 0.06, [1, 0.5, 0.8]);
   }
   if (kind === 'duckling') {
     cone(group, 0xff9f43, [0, 0.95, -0.38], 0.075, 0.18, [Math.PI / 2, 0, 0]);
@@ -158,25 +190,40 @@ function makeStudent(kind, color) {
 }
 
 function makeDog(config) {
+  // An upright sitting puppy, front-facing like every other character in the
+  // cast (the previous version was a side-profile-only quadruped: from the
+  // game's fixed front/isometric camera it showed one ear and a tail point
+  // with no visible face at all).
   const group = new THREE.Group();
   const fluffy = config.fluffy ?? false;
-  capsule(group, config.body, [0, 0.32, 0], fluffy ? 0.23 : 0.2, fluffy ? 0.58 : 0.5, [1, 1, 0.92], [0, 0, Math.PI / 2]);
-  sphere(group, config.head ?? config.body, [-0.42, 0.42, 0], 0.22, [1.02, 1, 0.92]);
-  sphere(group, config.chest, [-0.51, 0.36, -0.03], 0.1, [1.18, 0.85, 0.6]);
-  sphere(group, 0x1e1412, [-0.61, 0.36, 0], 0.035, [0.8, 0.7, 1]);
-  sphere(group, config.eye ?? 0x171317, [-0.54, 0.45, -0.08], 0.026);
-  sphere(group, config.eye ?? 0x171317, [-0.54, 0.45, 0.08], 0.026);
-  cone(group, config.ear ?? config.body, [-0.42, 0.63, -0.12], 0.085, 0.22, [-0.45, 0, 0.2]);
-  cone(group, config.ear ?? config.body, [-0.42, 0.63, 0.12], 0.085, 0.22, [0.45, 0, 0.2]);
-  cone(group, config.tail ?? config.body, [0.42, 0.38, 0], 0.085, fluffy ? 0.66 : 0.42, [0, 0, -Math.PI / 2.7]);
-  sphere(group, config.chest, [-0.25, 0.34, -0.08], 0.15, [1.1, 1.24, 0.48]);
-  for (const x of [-0.22, 0.22]) {
-    sphere(group, config.leg ?? config.body, [x, 0.1, -0.13], 0.055, [0.75, 1.4, 0.8]);
-    sphere(group, config.leg ?? config.body, [x, 0.1, 0.13], 0.055, [0.75, 1.4, 0.8]);
+  const bodyR = fluffy ? 0.27 : 0.24;
+  const headY = fluffy ? 0.72 : 0.68;
+  const headR = fluffy ? 0.25 : 0.22;
+
+  capsule(group, config.body, [0, 0.3, 0], bodyR, fluffy ? 0.32 : 0.28, [1.04, 1, 1]);
+  sphere(group, config.chest, [0, 0.3, -bodyR * 0.82], 0.15, [0.9, 1.1, 0.22]);
+  sphere(group, config.head ?? config.body, [0, headY, 0], headR, [1, 0.96, 0.94]);
+  addFace(group, headY, -headR * 0.82, fluffy ? 0.82 : 0.74, { muzzle: config.chest, nose: 0x2a1713 });
+
+  // Floppy ears framing both sides of the face.
+  capsule(group, config.ear ?? config.body, [-headR * 0.9, headY + 0.06, 0], 0.06, 0.22, [0.9, 1, 0.55], [0, 0, 0.55]);
+  capsule(group, config.ear ?? config.body, [headR * 0.9, headY + 0.06, 0], 0.06, 0.22, [0.9, 1, 0.55], [0, 0, -0.55]);
+
+  if (fluffy) {
+    // Neck ruff for the fluffier breeds (Aussie/Sheltie), sitting just under the chin.
+    sphere(group, config.chest, [0, headY - 0.22, -0.02], 0.19, [1.05, 0.72, 0.8]);
   }
+
+  // Tail peeking out from behind.
+  cone(group, config.tail ?? config.body, [0, 0.3, bodyR * 0.85], 0.08, fluffy ? 0.3 : 0.2, [Math.PI / 2.3, 0, 0]);
+
+  // Front paws.
+  sphere(group, config.leg ?? config.body, [-bodyR * 0.5, 0.05, -bodyR * 0.55], 0.07, [1, 0.55, 1.05]);
+  sphere(group, config.leg ?? config.body, [bodyR * 0.5, 0.05, -bodyR * 0.55], 0.07, [1, 0.55, 1.05]);
+
   if (config.spots) {
     config.spots.forEach(([x, y, z, color, sx, sy]) => {
-      sphere(group, color, [x, y, z], 0.065, [sx, sy, 0.62]);
+      sphere(group, color, [x, y, z], 0.065, [sx, sy, 0.55]);
     });
   }
   return group;
@@ -207,9 +254,9 @@ const assets = {
     tail: 0xd8dbe3,
     fluffy: true,
     spots: [
-      [-0.08, 0.43, -0.16, 0x3a3944, 1.4, 0.72],
-      [0.12, 0.36, 0.15, 0x6c6875, 1.2, 0.66],
-      [-0.48, 0.51, -0.03, 0xb57a42, 1.2, 0.8],
+      [-0.16, 0.84, -0.12, 0x3a3944, 1.1, 0.9],
+      [0.19, 0.36, -0.2, 0x6c6875, 1.2, 0.9],
+      [-0.2, 0.2, -0.16, 0xb57a42, 1, 0.8],
     ],
   }),
   'may.glb': makeDog({

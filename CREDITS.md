@@ -2,16 +2,11 @@
 
 ## External Assets
 
-### Kenney Cube Pets
+None currently. Every character model in `public/models/` is generated locally by
+`scripts/generate-character-glbs.mjs` (see `ASSET_UPGRADE_PLAN.md` for the history and
+possible future replacements).
 
-- Source: https://kenney.nl/assets/cube-pets
-- Creator: Kenney
-- License: Creative Commons Zero, CC0
-- Imported files used for model tests:
-  - `public/models/kenney-cube-pets/animal-bunny.glb`
-  - `public/models/kenney-cube-pets/animal-chick.glb`
-  - `public/models/kenney-cube-pets/animal-fox.glb`
-  - `public/models/kenney-cube-pets/animal-polar.glb`
-  - `public/models/kenney-cube-pets/Textures/colormap.png`
-
-Kenney credit is appreciated but not required by the license.
+The Kenney Cube Pets pack (CC0, https://kenney.nl/assets/cube-pets) was previously
+imported to stand in for four of the students, but its blocky voxel style clashed with
+the rest of the cast's soft rounded look, so it was removed in favor of extending the
+same generated style to every character.

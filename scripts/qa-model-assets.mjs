@@ -13,10 +13,6 @@ const requiredModels = [
   'may.glb',
   'phoebe.glb',
   'zoe.glb',
-  'kenney-cube-pets/animal-bunny.glb',
-  'kenney-cube-pets/animal-chick.glb',
-  'kenney-cube-pets/animal-fox.glb',
-  'kenney-cube-pets/animal-polar.glb',
 ];
 
 const maxModelBytes = 1_500_000;

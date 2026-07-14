@@ -2,8 +2,17 @@
 
 ## Current State
 
-The game now ships generated starter GLB files in `public/models/`.
-These prove the model-loading pipeline, keep the game fully playable, and can be replaced one file at a time.
+Every character (Miss Malia, Joshy, all five students, all four dogs) uses the same
+generated GLB style from `scripts/generate-character-glbs.mjs`. An earlier version of
+the game swapped four students to an imported Kenney Cube Pets pack, but that pack's
+blocky voxel style clashed with everyone else's soft rounded look, so it was removed —
+the whole cast now shares one consistent look instead of two clashing ones.
+
+This generated style is a real, cohesive art direction (not just a placeholder), but it
+is still simple flat-colored primitive geometry. A future pass with custom-modeled or
+commissioned GLBs would still be a legitimate upgrade — just make sure any replacement
+is done for the *entire* cast at once, not one character at a time, so the mismatch
+this plan just fixed doesn't reappear.
 
 ## Recommended Next Upgrade
 
@@ -16,17 +25,12 @@ Best near-term candidates:
    - Why it fits: broad stylized 3D library with animals, humanoid modular characters, nature, and interiors.
    - URL: https://quaternius.com/
 
-2. Kenney Cube Pets
-   - Useful for pet/dog stand-ins or style experiments.
-   - Why it fits: CC0, 3D, animated, small set, easy to test.
-   - URL: https://kenney.nl/assets/cube-pets
-
-3. itch.io 3D + Animals marketplace
+2. itch.io 3D + Animals marketplace
    - Useful for paid or free animal-specific packs.
    - Why it fits: filters for 3D, animals, low-poly, cute, Blender, characters, and asset packs.
    - URL: https://itch.io/game-assets/tag-3d/tag-animals
 
-4. Poly Pizza
+3. Poly Pizza
    - Useful for props and occasional low-poly character/placeholders.
    - Why it fits: large low-poly free model library.
    - URL: https://poly.pizza/
