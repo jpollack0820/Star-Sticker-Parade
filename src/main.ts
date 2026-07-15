@@ -305,7 +305,9 @@ function init() {
   students.forEach((student) => {
     const model = createStudent(student);
     model.position.copy(student.position);
-    model.lookAt(student.position.x, 0, student.position.z + 1);
+    // Face is local -Z; yaw π turns them to face into the room (+Z), which is
+    // what the old lookAt(z + 1) intended but got backwards.
+    model.rotation.set(0, Math.PI, 0);
     studentModels.set(student.id, model);
     scene.add(model);
     interactions.push({
@@ -683,7 +685,67 @@ function buildParadeCourtyard() {
     paradeGroup.add(flower);
   }
 
+  // Chunky trees and bushes ringing the clearing so the courtyard reads as a
+  // park, not an empty green slab. Kept clear of the path, stage, and the
+  // character/dog spots.
+  const treeSpots: [number, number, number][] = [
+    [-6.4, -4.3, 1.15],
+    [6.4, -4.1, 1.0],
+    [-6.7, 0.4, 0.9],
+    [6.7, 0.7, 1.2],
+    [-5.9, 4.2, 1.05],
+    [6.0, 4.3, 0.95],
+  ];
+  treeSpots.forEach(([x, z, s]) => addParadeTree(x, z, s));
+  const bushSpots: [number, number][] = [
+    [-5.1, -3.5],
+    [5.2, -3.3],
+    [-6.3, 2.4],
+    [6.3, 2.6],
+    [-3.6, 4.7],
+    [3.8, 4.8],
+  ];
+  bushSpots.forEach(([x, z]) => addParadeBush(x, z));
+
   addTextSprite('Star Sticker Parade', new THREE.Vector3(0, 2.36, -4.1), 0.22, '#5f497a', paradeGroup);
+}
+
+function addParadeTree(x: number, z: number, treeScale: number) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.7, 10), new THREE.MeshStandardMaterial({ color: 0xa4795a, roughness: 0.88 }));
+  trunk.position.y = 0.35;
+  tree.add(trunk);
+  const greens = [0x9fd8a4, 0x7fc48b, 0x8fce9a];
+  [
+    [0, 1.05, 0.62],
+    [-0.3, 0.82, 0.4],
+    [0.32, 0.86, 0.42],
+    [0, 1.5, 0.42],
+  ].forEach(([ox, oy, r], index) => {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), new THREE.MeshStandardMaterial({ color: greens[index % greens.length], roughness: 0.85 }));
+    puff.position.set(ox, oy, 0);
+    tree.add(puff);
+  });
+  tree.scale.setScalar(treeScale);
+  tree.position.set(x, 0, z);
+  tree.rotation.y = Math.random() * Math.PI * 2;
+  paradeGroup.add(tree);
+}
+
+function addParadeBush(x: number, z: number) {
+  const bush = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8), new THREE.MeshStandardMaterial({ color: 0x8fce9a, roughness: 0.88 }));
+  body.scale.set(1.3, 0.72, 1.1);
+  body.position.y = 0.2;
+  bush.add(body);
+  [0xf06ea9, 0xffe58f, 0xffffff].forEach((color, index) => {
+    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color, roughness: 0.7 }));
+    bloom.position.set(-0.24 + index * 0.24, 0.42, 0.08 - (index % 2) * 0.16);
+    bush.add(bloom);
+  });
+  bush.position.set(x, 0, z);
+  bush.rotation.y = Math.random() * Math.PI * 2;
+  paradeGroup.add(bush);
 }
 
 function createDoe() {
@@ -1004,6 +1066,10 @@ function openMiniGame(student: Student) {
   wireMiniGame(student.id);
 }
 
+// Pip's practice line for the parade. All eight words are in the tray along
+// with two decoys; every word is distinct so tile lookups stay unambiguous.
+const PIP_SENTENCE = ['I', 'can', 'say', 'my', 'whole', 'line', 'this', 'time'];
+
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -1015,13 +1081,12 @@ function shuffle<T>(items: T[]): T[] {
 
 function miniMarkup(id: StudentId) {
   if (id === 'bunny') {
-    // Two extra words that don't belong in the sentence at all, so the puzzle
-    // is genuine parsing (which 4 of these 6 words, in what order) rather than
-    // just permuting a set you already know are all correct.
-    const tiles = shuffle(['try', 'I', 'again', 'can', 'want', 'help']);
+    // An 8-word scramble plus two decoys, so it plays like a small anagram:
+    // work out the sentence from the pile, not just permute four words.
+    const tiles = shuffle([...PIP_SENTENCE, 'quiet', 'maybe']);
     return `
       <div class="sentence-board" aria-label="sentence blanks">
-        ${['', '', '', ''].map((_, index) => `<span class="blank-word" data-blank="${index}"></span>`).join('')}
+        ${PIP_SENTENCE.map((_, index) => `<span class="blank-word" data-blank="${index}"></span>`).join('')}
       </div>
       <div class="tile-tray">
         ${tiles.map((word) => `<button class="word-tile" data-word="${word}">${word}</button>`).join('')}
@@ -1032,12 +1097,17 @@ function miniMarkup(id: StudentId) {
     return `
       <div class="yarn-board">
         <svg viewBox="0 0 420 210" aria-label="tangled yarn puzzle">
-          <path data-line="lavender" d="M25 45 C110 20 165 92 230 62 S340 22 392 58" />
-          <path data-line="gold" d="M28 115 C95 160 158 40 230 110 S330 165 392 112" />
-          <path data-line="teal" d="M34 162 C96 92 150 188 230 142 S320 72 388 170" />
-          <path data-line="pink" d="M54 78 C120 134 176 154 240 88 S316 72 370 138" />
-          <path data-line="rose" d="M210 12 C160 55 264 92 200 132 S142 176 210 202" />
+          <!-- Draw order encodes the physical stacking: SVG paints later
+               elements on top, so the strand with nothing pinning it
+               (lavender) is drawn last / lies visibly on top, and each pull
+               exposes the next strand up. The correct order is readable by
+               looking at which strand crosses over the others. -->
           <path data-line="knot" d="M102 44 C126 86 132 128 104 168 M316 44 C292 86 286 128 314 168" />
+          <path data-line="rose" d="M210 12 C160 55 264 92 200 132 S142 176 210 202" />
+          <path data-line="pink" d="M54 78 C120 134 176 154 240 88 S316 72 370 138" />
+          <path data-line="teal" d="M34 162 C96 92 150 188 230 142 S320 72 388 170" />
+          <path data-line="gold" d="M28 115 C95 160 158 40 230 110 S330 165 392 112" />
+          <path data-line="lavender" d="M25 45 C110 20 165 92 230 62 S340 22 392 58" />
         </svg>
         <button class="pull-tab tab-lavender" data-strand="lavender">Pull lavender</button>
         <button class="pull-tab tab-gold" data-strand="gold">Pull gold</button>
@@ -1046,7 +1116,7 @@ function miniMarkup(id: StudentId) {
         <button class="pull-tab tab-rose" data-strand="rose">Pull rose</button>
         <button class="pull-tab tab-knot" data-strand="knot">Loosen knot</button>
       </div>
-      <div class="rule-strip">Free strands first. Pinned strands shake. Three wrong pulls and it all slips back.</div>
+      <div class="rule-strip">Pull whichever strand lies on top of the pile. Three wrong pulls and it all slips back.</div>
     `;
   }
   if (id === 'turtle') {
@@ -1099,9 +1169,9 @@ function wireMiniGame(id: StudentId) {
   };
 
   if (id === 'bunny') {
-    const target = ['I', 'can', 'try', 'again'];
+    const target = PIP_SENTENCE;
     let progress = 0;
-    status.textContent = "Six tiles, but only four belong. Figure out what Pip's trying to say.";
+    status.textContent = "Ten tiles, eight belong. Piece together Pip's practice line.";
     miniGame.querySelectorAll<HTMLButtonElement>('.word-tile').forEach((button) => {
       button.addEventListener('click', () => {
         const word = button.dataset.word || '';
@@ -1123,7 +1193,7 @@ function wireMiniGame(id: StudentId) {
         button.classList.add('picked');
         button.disabled = true;
         progress += 1;
-        status.textContent = `${progress}/4 words placed.`;
+        status.textContent = `${progress}/${target.length} words placed.`;
         if (progress === target.length) complete('Pip gets through the whole sentence.');
       });
     });
@@ -1143,7 +1213,7 @@ function wireMiniGame(id: StudentId) {
     const pulled = new Set<string>();
     let wrongPulls = 0;
     const tabs = Array.from(miniGame.querySelectorAll<HTMLButtonElement>('.pull-tab'));
-    status.textContent = 'Look for the strand that is not trapped under another one.';
+    status.textContent = 'Look at the tangle — one strand is lying on top of everything.';
 
     // Three wrong pulls and the whole tangle snaps back — matching Bram's
     // "I tried three times" temper, this gives the puzzle real stakes without
@@ -1357,12 +1427,12 @@ function wireMiniGame(id: StudentId) {
             dot.classList.remove('active');
             dot.classList.add('dormant');
             activeTimers.delete(dot);
-          }, 1600),
+          }, 950),
         );
       });
   };
 
-  const waveInterval = setInterval(activateWave, 1100);
+  const waveInterval = setInterval(activateWave, 750);
   activateWave();
 
   dots.forEach((button) => {
@@ -1479,8 +1549,9 @@ function enterParadeScene() {
   paradeGroup.visible = true;
   paradeGroup.add(bannerGroup);
   paradeGroup.add(garlandGroup);
-  bannerGroup.position.set(0, 1.46, -3.55);
-  garlandGroup.position.set(0, 1.02, -3.48);
+  // Hang the cloth banner just under the arch rail (rail y=2.08, z=-3.95).
+  bannerGroup.position.set(0, 1.3, -3.88);
+  garlandGroup.position.set(0, 0.72, -3.8);
   stageParadeCharacters();
   owl.visible = true;
   dogGroups.forEach((dog) => {
@@ -1521,7 +1592,12 @@ function stageParadeCharacters() {
     const model = studentModels.get(student.id);
     if (model) {
       model.position.copy(student.position);
-      model.lookAt(0, 0, -3.7);
+      // Explicit yaw only — lookAt() can express a turn as (π, yaw, π), and
+      // updateCharacterMotion stomps rotation.z every frame, which left the
+      // kids upside down (invisible pancakes in the grass) at the parade.
+      // Face is local -Z; aim it at Miss Malia's spot on the path.
+      const toPlayer = new THREE.Vector3(0, 0, 2.95).sub(student.position);
+      model.rotation.set(0, Math.atan2(-toPlayer.x, -toPlayer.z), 0);
     }
   });
   player.position.set(0, 0, 2.95);
@@ -1605,16 +1681,73 @@ function updateObjective() {
   } else {
     objective.textContent = `Help the class: ${save.completed.length}/5 class stars. Tap the floor or use WASD.`;
   }
+  // Fill stars left-to-right by how many tasks are done, not by which student
+  // finished (finishing the 2nd student in the roster used to light star #2).
   stickerBar.innerHTML = students
-    .map((student) => `<span class="${save.completed.includes(student.id) ? 'done' : ''}">★</span>`)
+    .map((_, index) => `<span class="${index < save.completed.length ? 'done' : ''}">★</span>`)
     .join('');
+}
+
+function makeClothBanner() {
+  const group = new THREE.Group();
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 300;
+  const ctx = canvas.getContext('2d')!;
+
+  // Cream fabric with a scalloped bottom edge, drawn as one filled path so
+  // the transparent texture reads as hanging cloth rather than a UI box.
+  const scallops = 9;
+  const scallopR = canvas.width / (scallops * 2);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(canvas.width, 0);
+  ctx.lineTo(canvas.width, canvas.height - scallopR);
+  for (let i = scallops - 1; i >= 0; i--) {
+    ctx.arc((i * 2 + 1) * scallopR, canvas.height - scallopR, scallopR, 0, Math.PI);
+  }
+  ctx.lineTo(0, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#fff6e8';
+  ctx.fill();
+
+  // Stitch border.
+  ctx.strokeStyle = '#d9a8c8';
+  ctx.lineWidth = 6;
+  ctx.setLineDash([18, 12]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#674a91';
+  ctx.font = '900 58px Nunito, Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Thank you for all the hard work', canvas.width / 2, 92, 940);
+  ctx.fillText('you do, Miss Malia.', canvas.width / 2, 168, 940);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const cloth = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.9, 1.44),
+    new THREE.MeshStandardMaterial({ map: texture, transparent: true, roughness: 0.9, side: THREE.DoubleSide }),
+  );
+  group.add(cloth);
+
+  // Little ties up to the arch rail.
+  const tieMat = new THREE.MeshStandardMaterial({ color: 0xd9a8c8, roughness: 0.8 });
+  [-2.3, 2.3].forEach((x) => {
+    const tie = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 8), tieMat);
+    tie.position.set(x, 0.85, 0);
+    tie.rotation.z = x < 0 ? -0.18 : 0.18;
+    group.add(tie);
+  });
+  return group;
 }
 
 function updateGarland() {
   bannerGroup.clear();
   garlandGroup.clear();
   if (save.endingUnlocked) {
-    addTextSprite('Thank you for all the hard work you do, Miss Malia.', new THREE.Vector3(0, 0, 0), 0.82, '#674a91', bannerGroup);
+    bannerGroup.add(makeClothBanner());
   } else {
     addTextSprite('Star Sticker Parade', new THREE.Vector3(0, 0, 0), 0.18, '#674a91', bannerGroup);
   }
@@ -1723,7 +1856,9 @@ function updatePlayer(dt: number) {
     player.position.addScaledVector(move, dt * 3.3);
     player.position.x = THREE.MathUtils.clamp(player.position.x, -5.7, 5.7);
     player.position.z = THREE.MathUtils.clamp(player.position.z, -4.35, 4.55);
-    player.rotation.y = Math.atan2(move.x, move.z);
+    // Character faces local -Z, so aim -Z along the travel direction
+    // (atan2(move.x, move.z) alone points the BACK of the head forward).
+    player.rotation.y = Math.atan2(-move.x, -move.z);
   }
 }
 
@@ -1809,7 +1944,7 @@ function updateInteractions() {
 
 function updateSparkles() {
   const t = performance.now() * 0.001;
-  bannerGroup.position.y = (paradeMode ? 1.46 : 1.75) + Math.sin(t * 1.4) * 0.03;
+  bannerGroup.position.y = (paradeMode ? 1.3 : 1.75) + Math.sin(t * 1.4) * 0.03;
   garlandGroup.rotation.z = Math.sin(t * 1.2) * 0.02;
   sparkleGroup.children.forEach((child, index) => {
     child.position.y += 0.006;

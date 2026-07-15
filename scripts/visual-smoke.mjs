@@ -85,7 +85,7 @@ if (!reachedPip) errors.push('Failed to walk into range of Pip');
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(200);
 await page.getByRole('button', { name: 'Help' }).click();
-for (const word of ['I', 'can', 'try', 'again']) {
+for (const word of ['I', 'can', 'say', 'my', 'whole', 'line', 'this', 'time']) {
   await page.getByRole('button', { name: word, exact: true }).click();
 }
 const miniDoneEnabled = await page.getByRole('button', { name: 'Add class star' }).isEnabled();
