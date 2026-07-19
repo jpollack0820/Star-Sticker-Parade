@@ -283,16 +283,28 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMappingExposure = 0.98;
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.querySelector<HTMLDivElement>('#app')!.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('pointerdown', onPointerMoveRequest);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x9078a8, 2.4));
-  const sun = new THREE.DirectionalLight(0xffffff, 2.3);
-  sun.position.set(5, 9, 4);
+  scene.add(new THREE.HemisphereLight(0xfffbf4, 0x765e96, 1.7));
+  const sun = new THREE.DirectionalLight(0xffefd1, 2.55);
+  sun.position.set(-4, 8, 5);
   sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -9;
+  sun.shadow.camera.right = 9;
+  sun.shadow.camera.top = 9;
+  sun.shadow.camera.bottom = -9;
   scene.add(sun);
+  const classroomFill = new THREE.DirectionalLight(0xdcc9ff, 1.05);
+  classroomFill.position.set(5, 4, 1);
+  scene.add(classroomFill);
+  const deskGlow = new THREE.PointLight(0xffdca8, 2.1, 5.5, 2);
+  deskGlow.position.set(-0.2, 2.15, -3.65);
+  scene.add(deskGlow);
 
   buildRoom();
   buildParadeCourtyard();
@@ -387,7 +399,7 @@ function buildRoom() {
   scene.add(roomGroup);
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(13, 0.25, 10),
-    new THREE.MeshStandardMaterial({ color: 0xdcc9ff, roughness: 0.86 }),
+    new THREE.MeshStandardMaterial({ color: 0xe4d9ef, roughness: 0.7 }),
   );
   floor.receiveShadow = true;
   floor.position.y = -0.13;
@@ -415,6 +427,7 @@ function buildRoom() {
   addCubbies(-5.8, 1.0);
   addBoard(0, -4.92, 'KINDNESS  COURAGE  PATIENCE  CREATIVITY');
   addTeacherDesk(-0.2, -4.2);
+  addTeacherNook(-0.2, -4.2);
   addCrochetCorner(-5.1, 3.5);
   addHibiscusPlants();
   bannerGroup = new THREE.Group();
@@ -601,6 +614,75 @@ function addBoard(x: number, z: number, text: string) {
 function addTeacherDesk(x: number, z: number) {
   addTable(x, z, 0xf5d4b8);
   addTextSprite('Nelson', new THREE.Vector3(x, 1.0, z - 0.58), 0.22, '#5f497a', roomGroup);
+}
+
+function addTeacherNook(x: number, z: number) {
+  const frame = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 1.55, 0.045),
+    new THREE.MeshStandardMaterial({ color: 0x7e609f, roughness: 0.64 }),
+  );
+  frame.position.set(x, 1.14, z - 0.76);
+  frame.receiveShadow = true;
+  addRoomObject(frame);
+
+  const pinboard = new THREE.Mesh(
+    new THREE.BoxGeometry(2.82, 1.18, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0xffefd5, roughness: 0.88 }),
+  );
+  pinboard.position.set(x, 1.14, z - 0.795);
+  pinboard.receiveShadow = true;
+  addRoomObject(pinboard);
+
+  for (const [offsetX, offsetY, color] of [[-0.78, 0.18, 0xf5a7c8], [0, 0.34, 0x9ed8c2], [0.8, 0.14, 0xf2c868]] as const) {
+    const note = new THREE.Mesh(
+      new THREE.BoxGeometry(0.38, 0.3, 0.025),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.82 }),
+    );
+    note.position.set(x + offsetX, 1.14 + offsetY, z - 0.825);
+    addRoomObject(note);
+  }
+
+  const rug = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 0.035, 1.8),
+    new THREE.MeshStandardMaterial({ color: 0xf2d9ea, roughness: 0.92 }),
+  );
+  rug.position.set(x, 0.01, z + 0.85);
+  rug.receiveShadow = true;
+  addRoomObject(rug);
+
+  const deskRunner = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 0.025, 0.38),
+    new THREE.MeshStandardMaterial({ color: 0x8b70bf, roughness: 0.6, metalness: 0.04 }),
+  );
+  deskRunner.position.set(x, 0.88, z - 0.03);
+  deskRunner.castShadow = true;
+  addRoomObject(deskRunner);
+
+  const lampBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.13, 0.06, 16),
+    new THREE.MeshStandardMaterial({ color: 0xf3c76a, roughness: 0.42, metalness: 0.12 }),
+  );
+  lampBase.position.set(x + 0.62, 0.93, z - 0.02);
+  lampBase.castShadow = true;
+  addRoomObject(lampBase);
+  const lampShade = new THREE.Mesh(
+    new THREE.ConeGeometry(0.16, 0.22, 16, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0xffefd0, roughness: 0.72, side: THREE.DoubleSide }),
+  );
+  lampShade.position.set(x + 0.62, 1.18, z - 0.02);
+  lampShade.castShadow = true;
+  addRoomObject(lampShade);
+
+  for (const [offsetX, color] of [[-0.52, 0xf2a3b7], [-0.4, 0x9ed8c2], [-0.28, 0xf2c868]] as const) {
+    const book = new THREE.Mesh(
+      new THREE.BoxGeometry(0.11, 0.07, 0.25),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.72 }),
+    );
+    book.position.set(x + offsetX, 0.92, z - 0.05);
+    book.rotation.y = offsetX * 0.45;
+    book.castShadow = true;
+    addRoomObject(book);
+  }
 }
 
 function addCrochetCorner(x: number, z: number) {
@@ -1893,9 +1975,9 @@ function updateCamera() {
     }
     return;
   }
-  const target = new THREE.Vector3(player.position.x, paradeMode ? 6.15 : 5.8, player.position.z + (paradeMode ? 6.65 : 6.2));
+  const target = new THREE.Vector3(player.position.x, paradeMode ? 6.15 : 5.2, player.position.z + (paradeMode ? 6.65 : 5.55));
   camera.position.lerp(target, 0.08);
-  camera.lookAt(player.position.x, 0.62, player.position.z - (paradeMode ? 2.55 : 1.05));
+  camera.lookAt(player.position.x, paradeMode ? 0.62 : 0.78, player.position.z - (paradeMode ? 2.55 : 0.86));
 }
 
 // Plays a chain of camera keyframes back to back, ending exactly at the normal

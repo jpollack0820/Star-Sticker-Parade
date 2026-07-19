@@ -115,15 +115,24 @@ function addFootPair(group, color, y = 0.04) {
 
 export function makeMissMalia() {
   const group = new THREE.Group();
-  capsule(group, 0xbca7ff, [0, 0.72, 0], 0.37, 0.78, [1, 1.05, 0.95]);
+  // Her silhouette needs to read as a teacher from the normal isometric camera:
+  // a soft dress, visible sleeves, and a larger, warmer face before the player
+  // gets close enough to read the tiny details.
+  capsule(group, 0xa990df, [0, 0.72, 0], 0.39, 0.76, [1.04, 1.04, 0.98]);
+  cone(group, 0x8d70c8, [0, 0.34, 0.035], 0.43, 0.42, [Math.PI, 0, 0], [1, 1, 0.9]);
+  capsule(group, 0xa990df, [-0.37, 0.8, -0.01], 0.075, 0.28, [0.8, 1, 0.8], [0, 0, 0.18]);
+  capsule(group, 0xa990df, [0.37, 0.8, -0.01], 0.075, 0.28, [0.8, 1, 0.8], [0, 0, -0.18]);
   addDressAccent(group);
-  sphere(group, 0xc99f78, [0, 1.38, 0], 0.4, [1, 1.04, 0.96]);
-  addFace(group, 1.38, -0.36, 1.28, { muzzle: 0xf2d5bd, nose: 0x4d3028 });
-  addEars(group, 0xc99f78, 1.67, 0.24);
+  sphere(group, 0xc99f78, [0, 1.42, 0], 0.43, [1.04, 1.07, 0.98]);
+  addFace(group, 1.42, -0.39, 1.38, { muzzle: 0xf2d5bd, nose: 0x4d3028 });
+  addEars(group, 0xc99f78, 1.73, 0.255);
+  cone(group, 0xf1b7ce, [-0.255, 1.73, -0.035], 0.055, 0.17, [0, 0, 0.34]);
+  cone(group, 0xf1b7ce, [0.255, 1.73, -0.035], 0.055, 0.17, [0, 0, -0.34]);
   addAntlers(group);
   addFootPair(group, 0x6d4b3c);
-  sphere(group, 0xf6d4ec, [-0.28, 0.86, -0.08], 0.07, [0.55, 1.25, 0.55]);
-  sphere(group, 0xf6d4ec, [0.28, 0.86, -0.08], 0.07, [0.55, 1.25, 0.55]);
+  sphere(group, 0xf6d4ec, [-0.34, 0.68, -0.1], 0.075, [0.68, 1.12, 0.62]);
+  sphere(group, 0xf6d4ec, [0.34, 0.68, -0.1], 0.075, [0.68, 1.12, 0.62]);
+  sphere(group, 0xf5d36d, [0.29, 1.7, -0.33], 0.055, [1.25, 1.25, 0.38], 0.58);
   return group;
 }
 
