@@ -2,7 +2,13 @@
 
 ## External Assets
 
-None currently. Every character model in `public/models/` is generated locally by
+Quaternius Ultimate House Interior Pack (CC0,
+https://quaternius.com/packs/ultimatehomeinterior.html) supplies the classroom
+bookshelves, chair variants, and rugs in
+`public/third-party/quaternius-ultimate-house-interior/obj/`. The original CC0 license
+text is retained with those files.
+
+Every character model in `public/models/` is generated locally by
 `scripts/generate-character-glbs.mjs` (see `ASSET_UPGRADE_PLAN.md` for the history and
 possible future replacements).
 

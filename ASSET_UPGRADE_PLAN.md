@@ -14,9 +14,12 @@ once rather than recreating a mixed-style roster.
 
 ## Recommended Next Upgrade
 
-**First prove the classroom environment.** The immediate visible weakness was the
-classroom's sparse procedural composition. Build and evaluate one complete classroom
-scene before broad cast replacement or parade work.
+**The classroom environment proof is now implemented.** The immediate visible
+weakness was the sparse procedural composition, so the first focused pass added
+consistent seating, rugs, shelving, window dressing, wall trim, and a stronger
+teacher-wall focal point while preserving a playable center aisle. Do not roll this
+asset set through the courtyard or parade until the owner reviews the verified
+desktop/mobile proof.
 
 If a future cast replacement is justified, source a single compatible stylized set and
 replace the whole cast together. Do not mix individual new character models with the
@@ -56,22 +59,25 @@ current generated cast.
 
 ## 2026-07-31 Classroom Prop Trial
 
-**Source actually tested:** [Quaternius Ultimate House Interior Pack](https://quaternius.com/packs/ultimatehomeinterior.html), official source. The selected OBJ/MTL subset (two bookshelves, three chairs, and one round carpet) is recorded in `public/third-party/quaternius-ultimate-house-interior/`, including its supplied CC0 licence text. No account, paid asset, new package, or conversion tool was used.
+**Source actually adopted:** [Quaternius Ultimate House Interior Pack](https://quaternius.com/packs/ultimatehomeinterior.html), official source. The selected OBJ/MTL subset (two bookshelves, three chair variants, and three rugs) is recorded in `public/third-party/quaternius-ultimate-house-interior/`, including its supplied CC0 licence text. No account, paid asset, new package, or conversion tool was used.
 
 **What passed:** the existing Three.js OBJ/MTL loaders imported the subset; model QA,
-production build, and desktop/mobile visual smoke passed. A responsive camera field of
-view (48 degrees landscape, 58 degrees portrait) makes the classroom legible on both
-target viewports instead of letting the player fill the frame.
+production build, and desktop/mobile visual smoke passed. The scene now reads as one
+deliberately arranged classroom rather than a bare test floor: the props create reading,
+craft, and teacher zones without blocking the center aisle. The camera remains at 48
+degrees landscape and 58 degrees portrait; a lower/farther camera trial made the
+composition worse and was rejected.
 
-**What did not pass:** this is an environment proof, not a finished visual direction.
-It improves classroom density and framing, but the scene and generated cast are still
-below the polished-indie gift-scene bar. Do not call the asset pipeline "solved" or roll
-it through the whole game yet.
+**What did not pass:** a GLB mirror trial from the same asset family produced a darker,
+less appealing window treatment and a headless-browser shader validation warning. It
+was removed rather than forced into the game. This remains one representative
+environment proof, not permission to call the art pipeline solved or to replace the
+cast piecemeal.
 
-**Next bounded decision:** decide the classroom art direction from the verified
-screenshots. If the owner wants the next quality pass, select a larger but still coherent
-interior set and define the final character-art direction as a separate packet; do not
-mix individual replacement characters into the current cast.
+**Next bounded decision:** the owner reviews the verified classroom proof in-game. If
+the look is accepted, choose one next surface (courtyard/parade or whole-cast direction)
+as a separate packet. If it is not accepted, name the visible blocker before sourcing
+another asset set; do not respond with a generic asset shopping spree.
 
 ## Quality Bar
 

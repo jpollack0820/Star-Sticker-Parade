@@ -418,9 +418,8 @@ function buildRoom() {
   addShelf(-5.95, -1.75);
   addShelf(5.95, -1.95);
   addWallDecorations();
+  addClassroomArchitecture();
 
-  addRug(0, 3.7, 3.4, 1.7, 0xc8f0d2);
-  addRug(-4.2, -3.3, 2.3, 1.4, 0xf7c4dd);
   addTable(-4.5, -1.0, 0xf2d6a2);
   addCraftScatter(-4.5, -1.0);
   addTable(4.4, 1.0, 0xf2d6a2);
@@ -449,15 +448,20 @@ function addRoomObject(object: THREE.Object3D) {
 }
 
 function addClassroomAssetProps() {
-  // CC0 props from Quaternius' Ultimate House Interior Pack. The trial is
-  // intentionally small: it must improve a single classroom composition
-  // before this project adopts a wider environment-asset pipeline.
+  // CC0 props from Quaternius' Ultimate House Interior Pack. The arrangement
+  // establishes three readable zones—reading, crafts, and the teacher's
+  // welcome space—while keeping the center aisle playable.
   void loadClassroomAsset('Bookshelf', new THREE.Vector3(-5.92, 0, -1.7), 0.34, Math.PI / 2);
   void loadClassroomAsset('Bookshelf', new THREE.Vector3(5.92, 0, -1.7), 0.34, -Math.PI / 2);
   void loadClassroomAsset('Carpet_Round', new THREE.Vector3(0, 0.014, 3.7), 1.25);
-  void loadClassroomAsset('Chair_1', new THREE.Vector3(-3.9, 0, -1.1), 0.36, -Math.PI / 4);
-  void loadClassroomAsset('Chair_1', new THREE.Vector3(3.75, 0, 1.6), 0.36, (3 * Math.PI) / 4);
-  void loadClassroomAsset('Chair_1', new THREE.Vector3(2.55, 0, -2.55), 0.36, Math.PI / 7);
+  void loadClassroomAsset('Carpet_1', new THREE.Vector3(-4.5, 0.014, -1), 0.86, Math.PI / 2);
+  void loadClassroomAsset('Carpet_2', new THREE.Vector3(4.4, 0.014, 1), 0.74);
+  void loadClassroomAsset('Chair_1', new THREE.Vector3(-3.35, 0, -1.1), 0.36, -Math.PI / 2);
+  void loadClassroomAsset('Chair_2', new THREE.Vector3(-5.25, 0, -0.35), 0.36, Math.PI / 5);
+  void loadClassroomAsset('Chair_3', new THREE.Vector3(-4.85, 0, -1.95), 0.36, Math.PI);
+  void loadClassroomAsset('Chair_2', new THREE.Vector3(3.58, 0, 1.62), 0.36, (3 * Math.PI) / 4);
+  void loadClassroomAsset('Chair_3', new THREE.Vector3(5.32, 0, 1.12), 0.36, Math.PI / 2);
+  void loadClassroomAsset('Chair_1', new THREE.Vector3(2.58, 0, -2.5), 0.36, Math.PI / 7);
 }
 
 async function loadClassroomAsset(name: string, position: THREE.Vector3, scale: number, rotationY = 0) {
@@ -487,6 +491,8 @@ function tuneClassroomMaterial(material: THREE.Material) {
   if (!(material instanceof THREE.MeshPhongMaterial || material instanceof THREE.MeshStandardMaterial)) return;
   if (material.name === 'White') material.color.setHex(0xc49472);
   if (material.name === 'Wood') material.color.setHex(0x9d725b);
+  if (material.name === 'Wood_Dark') material.color.setHex(0x805a48);
+  if (material.name === 'Cushin') material.color.setHex(0xe6bbd2);
   if (material.name === 'DarkRed') material.color.setHex(0x8e659e);
   if (material.name === 'LightOrange') material.color.setHex(0xf2c77d);
   if (material instanceof THREE.MeshStandardMaterial) material.roughness = 0.76;
@@ -501,6 +507,13 @@ function addWall(x: number, z: number, w: number, d: number) {
   wall.position.set(x, 0.73, z);
   wall.receiveShadow = true;
   addRoomObject(wall);
+
+  const baseboard = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.02, 0.1, d + 0.025),
+    new THREE.MeshStandardMaterial({ color: 0xb38bc6, roughness: 0.8 }),
+  );
+  baseboard.position.set(x, 0.04, z);
+  addRoomObject(baseboard);
 }
 
 function addFloorDetails() {
@@ -518,7 +531,10 @@ function addFloorDetails() {
 }
 
 function addWindow(x: number, z: number) {
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.82, 0.05), new THREE.MeshStandardMaterial({ color: 0xcfe9ff, roughness: 0.35 }));
+  const glass = new THREE.Mesh(
+    new THREE.BoxGeometry(1.45, 0.82, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0xcfe9ff, roughness: 0.35 }),
+  );
   glass.position.set(x, 1.2, z);
   addRoomObject(glass);
   const frameMat = new THREE.MeshStandardMaterial({ color: 0xfffbf5, roughness: 0.7 });
@@ -528,6 +544,35 @@ function addWindow(x: number, z: number) {
   horizontal.position.set(x, 1.2, z - 0.04);
   addRoomObject(vertical);
   addRoomObject(horizontal);
+
+  const curtainMat = new THREE.MeshStandardMaterial({ color: 0xb985bd, roughness: 0.86 });
+  const tieMat = new THREE.MeshStandardMaterial({ color: 0xf0c66b, roughness: 0.6 });
+  for (const offset of [-0.82, 0.82]) {
+    const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.98, 0.07), curtainMat);
+    curtain.position.set(x + offset, 1.2, z - 0.07);
+    curtain.rotation.z = offset * 0.12;
+    addRoomObject(curtain);
+    const tie = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.017, 8, 12), tieMat);
+    tie.position.set(x + offset, 1.02, z - 0.11);
+    tie.rotation.x = Math.PI / 2;
+    addRoomObject(tie);
+  }
+  const valance = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.16, 0.07), curtainMat);
+  valance.position.set(x, 1.68, z - 0.075);
+  addRoomObject(valance);
+}
+
+function addClassroomArchitecture() {
+  const wainscotMat = new THREE.MeshStandardMaterial({ color: 0xe5d7ee, roughness: 0.9 });
+  const backWainscot = new THREE.Mesh(new THREE.BoxGeometry(12.55, 0.48, 0.035), wainscotMat);
+  backWainscot.position.set(0, 0.31, -4.85);
+  addRoomObject(backWainscot);
+  const chairRail = new THREE.Mesh(
+    new THREE.BoxGeometry(12.6, 0.06, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0xb38bc6, roughness: 0.74 }),
+  );
+  chairRail.position.set(0, 0.59, -4.88);
+  addRoomObject(chairRail);
 }
 
 function addShelf(x: number, z: number) {
