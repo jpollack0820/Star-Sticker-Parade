@@ -6,7 +6,7 @@ Use this as the project context if continuing the game in Claude Browser or anot
 
 Project folder:
 
-`C:\Users\OnPointAssistant\Documents\side project\star-sticker-parade`
+`C:\AI-Workspace\Projects\Star-Sticker-Parade`
 
 Game title:
 
@@ -185,7 +185,7 @@ Generated starter GLBs in `public/models/`:
 - `phoebe.glb`
 - `zoe.glb`
 
-Imported external assets:
+## Historical asset note (not active)
 
 Kenney Cube Pets pack was downloaded into:
 
@@ -209,16 +209,10 @@ Kenney license:
 - Credit appreciated but not required
 - See `CREDITS.md`
 
-Current active model mapping:
+Current active model mapping (reconciled to `src/main.ts` on 2026-07-31):
 
-- Pip uses Kenney `animal-bunny.glb`
-- Bram uses Kenney `animal-polar.glb`
-- Lumi uses Kenney `animal-chick.glb`
-- Roo uses Kenney `animal-fox.glb`
-- Tilly uses generated `tilly-turtle.glb`
-- Miss Malia uses generated `miss-malia.glb`
-- Joshy uses generated `joshy.glb`
-- Dogs use generated custom dog GLBs
+- Every active character uses the generated chibi-critter GLB in `public/models/`.
+- The previously tried Kenney Cube Pets substitution is not active. Its voxel look conflicted with the generated soft rounded cast, so the project returned to one consistent generated style.
 
 Honest visual status:
 
@@ -243,13 +237,11 @@ Recommended external sources:
 4. Poly Pizza
    - https://poly.pizza/
 
-Priority for better final models:
+Current visual-proof priority:
 
-1. Miss Malia
-2. Joshy
-3. Four dogs
-4. Five students
-5. Classroom props and parade decorations
+1. Build one complete representative classroom scene before adding or sourcing model tools.
+2. Improve the entire cast together only if the proof identifies character quality as the remaining visual blocker.
+3. Improve the courtyard/parade only after the classroom direction is established.
 
 Replacement workflow:
 

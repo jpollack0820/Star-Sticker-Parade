@@ -1,6 +1,8 @@
 import './styles.css';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { makeMissMalia, makeJoshy, makeStudent as makeStudentBody, makeDog as makeDogBody } from './shared/critterKit.mjs';
 
 type StudentId = 'bunny' | 'bear' | 'turtle' | 'duckling' | 'fox';
@@ -66,6 +68,7 @@ interface CharacterMotion {
 
 const SAVE_KEY = 'star-sticker-parade-save-v1';
 const modelUrl = (fileName: string) => `${import.meta.env.BASE_URL}models/${fileName}`;
+const classroomAssetUrl = (fileName: string) => `${import.meta.env.BASE_URL}third-party/quaternius-ultimate-house-interior/obj/${fileName}`;
 // All characters share the same generated chibi-critter style (see
 // scripts/generate-character-glbs.mjs). The Kenney Cube Pets pack used to
 // stand in for four of the students, but its blocky voxel look clashed with
@@ -277,7 +280,7 @@ function init() {
   scene.background = new THREE.Color(0xf2e9ff);
   scene.fog = new THREE.Fog(0xf2e9ff, 17, 31);
 
-  camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(getCameraFov(), window.innerWidth / window.innerHeight, 0.1, 100);
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -430,6 +433,7 @@ function buildRoom() {
   addTeacherNook(-0.2, -4.2);
   addCrochetCorner(-5.1, 3.5);
   addHibiscusPlants();
+  addClassroomAssetProps();
   bannerGroup = new THREE.Group();
   bannerGroup.position.set(0, 1.75, -4.78);
   roomGroup.add(bannerGroup);
@@ -444,6 +448,51 @@ function addRoomObject(object: THREE.Object3D) {
   roomGroup.add(object);
 }
 
+function addClassroomAssetProps() {
+  // CC0 props from Quaternius' Ultimate House Interior Pack. The trial is
+  // intentionally small: it must improve a single classroom composition
+  // before this project adopts a wider environment-asset pipeline.
+  void loadClassroomAsset('Bookshelf', new THREE.Vector3(-5.92, 0, -1.7), 0.34, Math.PI / 2);
+  void loadClassroomAsset('Bookshelf', new THREE.Vector3(5.92, 0, -1.7), 0.34, -Math.PI / 2);
+  void loadClassroomAsset('Carpet_Round', new THREE.Vector3(0, 0.014, 3.7), 1.25);
+  void loadClassroomAsset('Chair_1', new THREE.Vector3(-3.9, 0, -1.1), 0.36, -Math.PI / 4);
+  void loadClassroomAsset('Chair_1', new THREE.Vector3(3.75, 0, 1.6), 0.36, (3 * Math.PI) / 4);
+  void loadClassroomAsset('Chair_1', new THREE.Vector3(2.55, 0, -2.55), 0.36, Math.PI / 7);
+}
+
+async function loadClassroomAsset(name: string, position: THREE.Vector3, scale: number, rotationY = 0) {
+  try {
+    const materials = await new MTLLoader().loadAsync(classroomAssetUrl(`${name}.mtl`));
+    materials.preload();
+    const model = await new OBJLoader().setMaterials(materials).loadAsync(classroomAssetUrl(`${name}.obj`));
+    model.name = `quaternius-${name.toLowerCase()}`;
+    model.position.copy(position);
+    model.rotation.y = rotationY;
+    model.scale.setScalar(scale);
+    model.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      child.castShadow = true;
+      child.receiveShadow = true;
+      child.frustumCulled = false;
+      const materialsToTune = Array.isArray(child.material) ? child.material : [child.material];
+      materialsToTune.forEach((material) => tuneClassroomMaterial(material));
+    });
+    roomGroup.add(model);
+  } catch {
+    // A missing optional presentation asset must never block the playable game.
+  }
+}
+
+function tuneClassroomMaterial(material: THREE.Material) {
+  if (!(material instanceof THREE.MeshPhongMaterial || material instanceof THREE.MeshStandardMaterial)) return;
+  if (material.name === 'White') material.color.setHex(0xc49472);
+  if (material.name === 'Wood') material.color.setHex(0x9d725b);
+  if (material.name === 'DarkRed') material.color.setHex(0x8e659e);
+  if (material.name === 'LightOrange') material.color.setHex(0xf2c77d);
+  if (material instanceof THREE.MeshStandardMaterial) material.roughness = 0.76;
+  if (material instanceof THREE.MeshPhongMaterial) material.shininess = 20;
+}
+
 function addWall(x: number, z: number, w: number, d: number) {
   const wall = new THREE.Mesh(
     new THREE.BoxGeometry(w, 1.7, d),
@@ -455,7 +504,7 @@ function addWall(x: number, z: number, w: number, d: number) {
 }
 
 function addFloorDetails() {
-  const lineMat = new THREE.MeshBasicMaterial({ color: 0xcab9e1, transparent: true, opacity: 0.3 });
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xc7b4d9, transparent: true, opacity: 0.16 });
   for (let x = -5.4; x <= 5.4; x += 1.2) {
     const line = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.012, 9.2), lineMat);
     line.position.set(x, 0.011, 0);
@@ -833,7 +882,6 @@ function addParadeBush(x: number, z: number) {
 function createDoe() {
   const group = makeMissMalia();
   addGroundShadow(group, 0.88, 0.52);
-  addTextSprite('Miss Malia', new THREE.Vector3(0, 2.05, 0), 0.18, '#5f497a', group);
   attachOptionalModel(group, 'missMalia', { scale: 0.92 });
   registerCharacterMotion(group, 'player');
   return group;
@@ -842,7 +890,6 @@ function createDoe() {
 function createStudent(student: Student) {
   const group = makeStudentBody(student.id, student.color);
   addGroundShadow(group, 0.62, 0.42);
-  addTextSprite(student.name, new THREE.Vector3(0, 1.55, 0), 0.16, '#5f497a', group);
   attachOptionalModel(group, student.id, getStudentModelOptions(student.id));
   registerCharacterMotion(group, 'student');
   return group;
@@ -865,7 +912,6 @@ function getStudentModelOptions(id: StudentId): ModelAttachOptions {
 function createOwl() {
   const group = makeJoshy();
   addGroundShadow(group, 0.58, 0.42);
-  addTextSprite('Joshy ❤️', new THREE.Vector3(0, 1.56, 0), 0.2, '#5f497a', group);
   attachOptionalModel(group, 'joshy', { scale: 0.8 });
   registerCharacterMotion(group, 'owl');
   return group;
@@ -881,7 +927,6 @@ function createDog(config: DogConfig) {
     spots: config.spots,
   });
   addGroundShadow(group, fluffy ? 0.62 : 0.56, 0.4);
-  addTextSprite(config.name, new THREE.Vector3(0, 1.12, 0), 0.13, '#5f497a', group);
   attachOptionalModel(group, config.id as ModelAssetKey, { scale: 1 });
   registerCharacterMotion(group, 'dog');
   return group;
@@ -2063,8 +2108,13 @@ function updateCharacterMotion(dt: number) {
 
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
+  camera.fov = getCameraFov();
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function getCameraFov() {
+  return window.innerHeight > window.innerWidth ? 58 : 48;
 }
 
 function loadSave(): SaveData {

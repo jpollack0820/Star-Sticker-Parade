@@ -19,6 +19,8 @@ Before work, read `../../Brain/AGENTS.md`, `../../Brain/docs/PROJECT_REGISTRY.md
 
 ## Current visual-quality gate
 
+**Source reconciliation (2026-07-31):** live `src/main.ts` maps every active character to the generated chibi-critter GLBs in `public/models/`. The older Kenney Cube Pets substitution is not active; use the live model map rather than an old handoff when judging art direction.
+
 The environment/classroom is the larger visible gap (sparse, procedural, prototype-looking), not the character models specifically. The next visual packet is **one complete representative classroom scene, plus whichever character best serves that scene** — decided from the current asset plan and screenshot evidence, not mechanically by list order (do not default to "Joshy is next" just because `ASSET_UPGRADE_PLAN.md` lists him second). Do not replace the character cast piecemeal — per that plan's own rule, whole cast at once or not at all.
 
 ## Gates (Brain-wide defaults, unchanged)
