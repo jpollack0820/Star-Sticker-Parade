@@ -2,6 +2,14 @@
 
 Use this as the project context if continuing the game in Claude Browser or another coding agent.
 
+> **Current-state guardrail (2026-08-04):** Start on `codex/ssp-visual-proof` and
+> read `AGENTS.md`, `docs/PROJECT_STATE.md`, `docs/WORK_PACKETS.md`, and
+> `ASSET_UPGRADE_PLAN.md` before acting. This document keeps useful historical detail;
+> if it conflicts with the current visual gate or asset state, those current files
+> win. All active characters use generated chibi-critter GLBs, Kenney substitutions
+> are inactive, and the classroom proof is implemented. Next is owner/manager review
+> and one bounded follow-up surface, not piecemeal character replacement.
+
 ## Project
 
 Project folder:
